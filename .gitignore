@@ -1,0 +1,4 @@
+*.iml
+gen
+out
+local.properties
