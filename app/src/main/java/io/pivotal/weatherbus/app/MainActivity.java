@@ -1,10 +1,10 @@
 package io.pivotal.weatherbus.app;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.EditText;
+import android.widget.Toast;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
@@ -14,6 +14,7 @@ import java.util.List;
 
 public class MainActivity extends RoboActivity {
     @InjectView(R.id.submitButton) Button button;
+    @InjectView(R.id.username) EditText userName;
 
     @Inject
     WeatherBusService service;
@@ -26,10 +27,15 @@ public class MainActivity extends RoboActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                TextView textView = (TextView) findViewById(R.id.username);
-                String userId = textView.getText().toString();
-
+                String userId = userName.getText().toString();
+                if(userId.isEmpty()) {
+                    return;
+                }
                 List<String> stopIds = service.getStopIds(userId);
+                if (stopIds.isEmpty()) {
+                    Toast.makeText(MainActivity.this.getApplicationContext(), "No stops found for this user", Toast.LENGTH_SHORT)
+                            .show();
+                }
             }
         });
     }
