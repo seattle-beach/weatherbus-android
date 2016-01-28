@@ -14,7 +14,6 @@ import org.mockito.InjectMocks;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 import org.robolectric.shadows.ShadowToast;
-import rx.android.schedulers.AndroidSchedulers;
 import rx.subjects.PublishSubject;
 
 import java.util.ArrayList;
@@ -34,7 +33,7 @@ public class MainActivityTest {
     MainActivity subject;
 
     String userName;
-    PublishSubject publishSubject;
+    PublishSubject<List<StopForUserResponse>> publishSubject;
     List<StopForUserResponse> response;
 
     @Before
@@ -81,7 +80,6 @@ public class MainActivityTest {
     public void onButtonClick_whenNoStopsAreFound_shouldToast() {
         ((EditText) subject.findViewById(R.id.username)).setText(userName);
         subject.findViewById(R.id.submitButton).performClick();
-        publishSubject.observeOn(AndroidSchedulers.mainThread());
         publishSubject.onNext(new ArrayList<StopForUserResponse>());
         publishSubject.onCompleted();
 
@@ -92,7 +90,6 @@ public class MainActivityTest {
     public void onButtonClick_whenStopsAreFound_shouldPopulateListView() {
         ((EditText) subject.findViewById(R.id.username)).setText(userName);
         subject.findViewById(R.id.submitButton).performClick();
-        publishSubject.observeOn(AndroidSchedulers.mainThread());
         publishSubject.onNext(response);
         publishSubject.onCompleted();
 
@@ -104,7 +101,6 @@ public class MainActivityTest {
     public void onSecondButtonClick_onlyNewStopsShouldShow() {
         ((EditText) subject.findViewById(R.id.username)).setText(userName);
         subject.findViewById(R.id.submitButton).performClick();
-        publishSubject.observeOn(AndroidSchedulers.mainThread());
         publishSubject.onNext(response);
         publishSubject.onCompleted();
 
