@@ -36,7 +36,7 @@ public class MainActivity extends RoboActivity {
                 if(userId.isEmpty()) {
                     return;
                 }
-                service.getStopIds(userId)
+                service.getStopForUser(userId)
                         .subscribeOn(Schedulers.newThread())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(new Action1<List<StopForUserResponse>>() {

@@ -11,7 +11,14 @@ public class WeatherBusService {
         this.weatherBusService = weatherBusService;
     }
 
-    public Observable<List<StopForUserResponse>> getStopIds(String username) {
-        return weatherBusService.getStops(username);
+    public Observable<List<StopForUserResponse>> getStopForUser(String username) {
+        return weatherBusService.getStopsForUser(username);
+    }
+
+    public Observable<List<StopForLocationResponse>> getStopsForLocation(double latitude,
+                                                                         double longitude,
+                                                                         double latitudeSpan,
+                                                                         double longitudeSpan) {
+        return weatherBusService.getStopsForLocation(latitude, longitude, latitudeSpan, longitudeSpan);
     }
 }

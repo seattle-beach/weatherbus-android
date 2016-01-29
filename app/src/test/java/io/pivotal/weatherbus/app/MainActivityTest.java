@@ -41,7 +41,7 @@ public class MainActivityTest {
         subject = Robolectric.setupActivity(MainActivity.class);
         userName = "bob";
         publishSubject = PublishSubject.create();
-        when(service.getStopIds(userName)).thenReturn(publishSubject);
+        when(service.getStopForUser(userName)).thenReturn(publishSubject);
         response = new ArrayList<StopForUserResponse>() {{
             add(new StopForUserResponse());
             get(0).setId("1_1234");
@@ -65,7 +65,7 @@ public class MainActivityTest {
         ((EditText) subject.findViewById(R.id.username)).setText(userName);
         subject.findViewById(R.id.submitButton).performClick();
 
-        verify(service, times(1)).getStopIds(userName);
+        verify(service, times(1)).getStopForUser(userName);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class MainActivityTest {
         ((EditText) subject.findViewById(R.id.username)).setText("");
         subject.findViewById(R.id.submitButton).performClick();
 
-        verify(service, never()).getStopIds(anyString());
+        verify(service, never()).getStopForUser(anyString());
     }
 
     @Test
@@ -105,7 +105,7 @@ public class MainActivityTest {
         publishSubject.onCompleted();
 
         publishSubject = PublishSubject.create();
-        when(service.getStopIds("bob2")).thenReturn(publishSubject);
+        when(service.getStopForUser("bob2")).thenReturn(publishSubject);
         ((EditText) subject.findViewById(R.id.username)).setText("bob2");
         subject.findViewById(R.id.submitButton).performClick();
         publishSubject.onNext(new ArrayList<StopForUserResponse>() {{

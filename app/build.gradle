@@ -14,6 +14,7 @@ apply plugin: 'com.android.application'
 
 repositories {
     jcenter()
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 android {
@@ -43,17 +44,20 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'org.roboguice:roboguice:2.0'
-    compile 'com.google.guava:guava:18.0'
+    compile 'com.google.guava:guava:19.0-rc2'
     compile 'com.squareup.retrofit:retrofit:1.9.0'
     compile 'com.squareup.okhttp:okhttp:2.5.0'
     provided 'org.projectlombok:lombok:1.12.6'
     compile 'io.reactivex:rxjava:1.0.10'
     compile 'io.reactivex:rxandroid:1.1.0'
+    compile 'com.google.android.gms:play-services-maps:8.4.0'
+    compile 'com.google.android.gms:play-services-location:8.4.0'
+    compile 'com.sdoward:rxgooglemaps:0.2@aar'
 
     testCompile 'junit:junit:4.11'
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile 'org.assertj:assertj-core:1.7.0'
-    testCompile 'org.robolectric:robolectric:3.0'
+    testCompile 'org.robolectric:robolectric:3.1-SNAPSHOT'
     testCompile 'net.javacrumbs.json-unit:json-unit:1.8.0'
     testCompile 'net.javacrumbs.json-unit:json-unit-spring:1.8.0'
 }
