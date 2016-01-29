@@ -8,8 +8,8 @@ import io.pivotal.weatherbus.app.services.StopForUserResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
 import roboguice.inject.InjectView;
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 import java.util.List;
@@ -22,11 +22,13 @@ public class MainActivity extends RoboActivity {
     @Inject
     WeatherBusService service;
 
+    ArrayAdapter<String> adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        final ArrayAdapter adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1);
+        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1);
         stopList.setAdapter(adapter);
 
         button.setOnClickListener(new View.OnClickListener() {
@@ -39,26 +41,33 @@ public class MainActivity extends RoboActivity {
                 service.getStopForUser(userId)
                         .subscribeOn(Schedulers.newThread())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(new Action1<List<StopForUserResponse>>() {
-                            @Override
-                            public void call(List<StopForUserResponse> stopForUserResponses) {
-                                adapter.clear();
-                                for (StopForUserResponse stop : stopForUserResponses) {
-                                    adapter.add(stop.getName());
-                                }
-                                if (adapter.getCount() == 0) {
-                                    Toast.makeText(MainActivity.this.getApplicationContext(), R.string.no_stops_for_user, Toast.LENGTH_SHORT)
-                                            .show();
-                                }
-                            }
-                        }, new Action1<Throwable>() {
-                            @Override
-                            public void call(Throwable throwable) {
-                                Toast.makeText(MainActivity.this.getApplicationContext(), "Error retrieving stops for this user", Toast.LENGTH_SHORT)
-                                        .show();
-                            }
-                        });
+                        .subscribe(new StopForUserResponseSubscriber());
             }
         });
+    }
+
+    private class StopForUserResponseSubscriber extends Subscriber<List<StopForUserResponse>> {
+        @Override
+        public void onCompleted() {
+
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            Toast.makeText(MainActivity.this.getApplicationContext(), "Error retrieving stops for this user", Toast.LENGTH_SHORT)
+                    .show();
+        }
+
+        @Override
+        public void onNext(List<StopForUserResponse> stopForUserResponses) {
+            adapter.clear();
+            for (StopForUserResponse stop : stopForUserResponses) {
+                adapter.add(stop.getName());
+            }
+            if (adapter.getCount() == 0) {
+                Toast.makeText(MainActivity.this.getApplicationContext(), R.string.no_stops_for_user, Toast.LENGTH_SHORT)
+                        .show();
+            }
+        }
     }
 }

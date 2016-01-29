@@ -8,6 +8,7 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.inject.Inject;
@@ -53,73 +54,12 @@ public class MapActivity extends RoboActivity{
 
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
 
-        Subscriber<GoogleMap> googleMapSubscriber = new Subscriber<GoogleMap>() {
-            @Override
-            public void onCompleted() {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onNext(GoogleMap googleMap) {
-
-            }
-        };
-
         MapRepository mapRepository = new MapRepository();
-        mapRepository.create(mapFragment).subscribe(googleMapSubscriber);
-
-        final Subscriber<Location> locationSubscriber = new Subscriber<Location>() {
-            @Override
-            public void onCompleted() {
-
-            }
-
-            @Override
-            public void onError(Throwable e) {
-
-            }
-
-            @Override
-            public void onNext(Location location) {
-                String text = String.format("(%.1f, %.1f)", location.getLatitude(), location.getLongitude());
-                currentLocationHeader.setText(text);
-
-                Subscriber<List<StopForLocationResponse>> stopSubscriber = new Subscriber<List<StopForLocationResponse>>() {
-                    @Override
-                    public void onCompleted() {
-
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onNext(List<StopForLocationResponse> stopForLocationResponses) {
-                        adapter.clear();
-                        for (StopForLocationResponse stop : stopForLocationResponses) {
-                            String text = String.format("%s: (%.1f, %.1f)", stop.getName(), stop.getLatitude(), stop.getLongitude());
-                            adapter.add(text);
-                        }
-                    }
-                };
-
-                service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 0.02, 0.02)
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(Schedulers.newThread())
-                    .subscribe(stopSubscriber);
-            }
-        };
-        locationRepository.create(this)
+        subscriptions.add(mapRepository.create(mapFragment).subscribe(new GoogleMapSubscriber()));
+        subscriptions.add(locationRepository.create(this)
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(Schedulers.newThread())
-                .subscribe(locationSubscriber);
+                .subscribe(new LocationSubscriber()));
     }
 
     @Override
@@ -148,5 +88,65 @@ public class MapActivity extends RoboActivity{
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private class GoogleMapSubscriber extends Subscriber<GoogleMap> {
+        @Override
+        public void onCompleted() {
+
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            Toast.makeText(getApplicationContext(), "Failed to load maps!", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onNext(GoogleMap googleMap) {
+
+        }
+    }
+
+    private class LocationSubscriber extends Subscriber<Location> {
+        @Override
+        public void onCompleted() {
+
+        }
+
+        @Override
+        public void onError(Throwable e) {
+            Toast.makeText(getApplicationContext(), "Failed to get location!", Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onNext(Location location) {
+            String text = String.format("(%.1f, %.1f)", location.getLatitude(), location.getLongitude());
+            currentLocationHeader.setText(text);
+            subscriptions.add(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 0.02, 0.02)
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribeOn(Schedulers.newThread())
+                    .subscribe(new StopForLocationResponsesSubscriber()));
+        }
+
+        private class StopForLocationResponsesSubscriber extends Subscriber<List<StopForLocationResponse>> {
+            @Override
+            public void onCompleted() {
+
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Toast.makeText(getApplicationContext(), "Failed to get stops near location!", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onNext(List<StopForLocationResponse> stopForLocationResponses) {
+                adapter.clear();
+                for (StopForLocationResponse stop : stopForLocationResponses) {
+                    String text = String.format("%s: (%.1f, %.1f)", stop.getName(), stop.getLatitude(), stop.getLongitude());
+                    adapter.add(text);
+                }
+            }
+        }
     }
 }
