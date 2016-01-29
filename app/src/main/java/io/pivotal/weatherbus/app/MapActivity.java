@@ -1,5 +1,6 @@
 package io.pivotal.weatherbus.app;
 
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -8,11 +9,9 @@ import android.widget.ListView;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.inject.Inject;
-import com.sdoward.rxgooglemap.MapObservableProvider;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
 import roboguice.inject.InjectView;
-import rx.Observable;
 import rx.functions.Action0;
 import rx.functions.Action1;
 import rx.subscriptions.CompositeSubscription;
@@ -20,7 +19,6 @@ import rx.subscriptions.Subscriptions;
 
 public class MapActivity extends RoboActivity{
     MapFragment mapFragment;
-    private MapObservableProvider mapObservableProvider;
     private CompositeSubscription subscriptions = Subscriptions.from();
 
     @InjectView(R.id.stopList) ListView stopList;
@@ -33,8 +31,9 @@ public class MapActivity extends RoboActivity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+
         MapRepository mapRepository = new MapRepository();
-        mapRepository.createMap(mapFragment).subscribe(new Action1<GoogleMap>() {
+        mapRepository.create(mapFragment).subscribe(new Action1<GoogleMap>() {
             @Override
             public void call(GoogleMap googleMap) {
                 Log.v("Hi","");
@@ -50,24 +49,24 @@ public class MapActivity extends RoboActivity{
 
             }
         });
-//        mapObservableProvider = new MapObservableProvider(mapFragment);
-//        subscriptions.add(mapObservableProvider.getMapReadyObservable()
-//                .subscribe(new Action1<GoogleMap>() {
-//                    @Override
-//                    public void call(GoogleMap googleMap) {
-//
-//                    }
-//                }, new Action1<Throwable>() {
-//                    @Override
-//                    public void call(Throwable throwable) {
-//
-//                    }
-//                }, new Action0() {
-//                    @Override
-//                    public void call() {
-//
-//                    }
-//                }));
+
+        LocationRepository locationRepository = new LocationRepository();
+        locationRepository.create(this).subscribe(new Action1<Location>() {
+            @Override
+            public void call(Location location) {
+                Log.v("Hello","");
+            }
+        }, new Action1<Throwable>() {
+            @Override
+            public void call(Throwable throwable) {
+
+            }
+        }, new Action0() {
+            @Override
+            public void call() {
+
+            }
+        });
     }
 
     @Override
