@@ -24,4 +24,10 @@ public class TestApplicationModule extends AbstractModule {
     IRetrofitWeatherBusService getIRetrofitWeatherBusService() {
         return mock(IRetrofitWeatherBusService.class);
     }
+
+    @Provides
+    @Singleton
+    LocationRepository getLocationRepository() {
+        return mock(LocationRepository.class);
+    }
 }

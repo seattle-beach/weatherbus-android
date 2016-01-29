@@ -39,5 +39,11 @@ public class WeatherBusApplication extends Application {
             RestAdapter adapter = builder.build();
             return adapter.create(IRetrofitWeatherBusService.class);
         }
+
+        @Provides
+        @Singleton
+        LocationRepository getLocationRepository() {
+            return new LocationRepository();
+        }
     }
 }
