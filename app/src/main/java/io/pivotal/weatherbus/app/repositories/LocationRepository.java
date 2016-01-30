@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app;
+package io.pivotal.weatherbus.app.repositories;
 
 import android.content.Context;
 import android.location.Location;

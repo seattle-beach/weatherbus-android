@@ -9,26 +9,35 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.inject.Inject;
+import io.pivotal.weatherbus.app.repositories.LocationRepository;
+import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
 import roboguice.inject.InjectView;
+import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
 
 import java.util.List;
 
-public class MapActivity extends RoboActivity{
+public class MapActivity extends RoboActivity {
     MapFragment mapFragment;
     private CompositeSubscription subscriptions = Subscriptions.from();
 
-    @InjectView(R.id.stopList) ListView stopList;
+    @InjectView(R.id.stopList)
+    ListView stopList;
     ArrayAdapter<String> adapter;
 
     TextView currentLocationHeader;
@@ -37,7 +46,7 @@ public class MapActivity extends RoboActivity{
     WeatherBusService service;
 
     @Inject
-    LocationRepository locationRepository;
+    MapRepository mapRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +63,14 @@ public class MapActivity extends RoboActivity{
 
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
 
-        MapRepository mapRepository = new MapRepository();
-        subscriptions.add(mapRepository.create(mapFragment).subscribe(new GoogleMapSubscriber()));
-        subscriptions.add(locationRepository.create(this)
+        Observable<GoogleMapWrapper> googleMap = mapRepository.create(mapFragment, this);
+
+        subscriptions.add(googleMap
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.newThread())
-                .subscribe(new LocationSubscriber()));
+                .subscribeOn(AndroidSchedulers.mainThread())
+                .subscribe(new GoogleMapSubscriber()));
+
+        //subscriptions.add(googleMapWrapperObservable.subscribe(new GoogleMapSubscriber()));
     }
 
     @Override
@@ -90,7 +101,7 @@ public class MapActivity extends RoboActivity{
         return super.onOptionsItemSelected(item);
     }
 
-    private class GoogleMapSubscriber extends Subscriber<GoogleMap> {
+    private class GoogleMapSubscriber extends Subscriber<GoogleMapWrapper> {
         @Override
         public void onCompleted() {
 
@@ -102,30 +113,18 @@ public class MapActivity extends RoboActivity{
         }
 
         @Override
-        public void onNext(GoogleMap googleMap) {
-
-        }
-    }
-
-    private class LocationSubscriber extends Subscriber<Location> {
-        @Override
-        public void onCompleted() {
-
-        }
-
-        @Override
-        public void onError(Throwable e) {
-            Toast.makeText(getApplicationContext(), "Failed to get location!", Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onNext(Location location) {
-            String text = String.format("(%.1f, %.1f)", location.getLatitude(), location.getLongitude());
+        public void onNext(GoogleMapWrapper map) {
+            LatLngBounds bounds = map.getLatLngBounds();
+            String text = String.format("(%.1f, %.1f)", bounds.getCenter().latitude, bounds.getCenter().longitude);
             currentLocationHeader.setText(text);
-            subscriptions.add(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 0.02, 0.02)
+
+            LatLng center = bounds.getCenter();
+            double left = bounds.northeast.latitude - bounds.southwest.latitude;
+            double right = bounds.northeast.longitude - bounds.southwest.longitude;
+            service.getStopsForLocation(center.latitude, center.longitude, left, right)
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.newThread())
-                    .subscribe(new StopForLocationResponsesSubscriber()));
+                    .subscribe(new StopForLocationResponsesSubscriber());
         }
 
         private class StopForLocationResponsesSubscriber extends Subscriber<List<StopForLocationResponse>> {
@@ -150,3 +149,4 @@ public class MapActivity extends RoboActivity{
         }
     }
 }
+

@@ -7,35 +7,40 @@ import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
+import retrofit.RestAdapter;
+import retrofit.client.OkClient;
 
-import static org.mockito.Mockito.mock;
+public class ApplicationModule extends AbstractModule {
 
-public class TestApplicationModule extends AbstractModule {
     @Override
     protected void configure() {
+
     }
 
     @Provides
     @Singleton
-    WeatherBusService getWeatherBusService() {
-        return mock(WeatherBusService.class);
+    WeatherBusService getService(IRetrofitWeatherBusService weatherBusService) {
+        return new WeatherBusService(weatherBusService);
     }
 
     @Provides
     @Singleton
     IRetrofitWeatherBusService getIRetrofitWeatherBusService() {
-        return mock(IRetrofitWeatherBusService.class);
+        RestAdapter.Builder builder = new RestAdapter.Builder().setEndpoint("http://weatherbus-prime-dev.cfapps.io");
+        builder.setClient(new OkClient());
+        RestAdapter adapter = builder.build();
+        return adapter.create(IRetrofitWeatherBusService.class);
     }
 
     @Provides
     @Singleton
     LocationRepository getLocationRepository() {
-        return mock(LocationRepository.class);
+        return new LocationRepository();
     }
 
     @Provides
     @Singleton
-    MapRepository getMapRepository() {
-        return mock(MapRepository.class);
+    MapRepository getMapRepository(LocationRepository locationRepository) {
+        return new MapRepository(locationRepository);
     }
 }

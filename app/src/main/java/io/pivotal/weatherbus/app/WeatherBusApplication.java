@@ -17,33 +17,4 @@ public class WeatherBusApplication extends Application {
         super.onCreate();
         setBaseApplicationInjector(this, DEFAULT_STAGE, newDefaultRoboModule(this), new ApplicationModule());
     }
-
-    public static class ApplicationModule extends AbstractModule {
-
-        @Override
-        protected void configure() {
-
-        }
-
-        @Provides
-        @Singleton
-        WeatherBusService getService(IRetrofitWeatherBusService weatherBusService) {
-            return new WeatherBusService(weatherBusService);
-        }
-
-        @Provides
-        @Singleton
-        IRetrofitWeatherBusService getIRetrofitWeatherBusService() {
-            RestAdapter.Builder builder = new RestAdapter.Builder().setEndpoint("http://weatherbus-prime-dev.cfapps.io");
-            builder.setClient(new OkClient());
-            RestAdapter adapter = builder.build();
-            return adapter.create(IRetrofitWeatherBusService.class);
-        }
-
-        @Provides
-        @Singleton
-        LocationRepository getLocationRepository() {
-            return new LocationRepository();
-        }
-    }
 }

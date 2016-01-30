@@ -8,7 +8,7 @@ import java.lang.reflect.Method;
 import static roboguice.RoboGuice.*;
 
 public class TestWeatherBusApplication extends WeatherBusApplication implements TestLifecycleApplication {
-    private final ApplicationModule module = new WeatherBusApplication.ApplicationModule();
+    private final ApplicationModule module = new ApplicationModule();
     private final TestApplicationModule testModule = new TestApplicationModule();
 
     @Override

@@ -5,15 +5,26 @@ import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import com.google.android.gms.maps.CameraUpdate;
+import com.google.android.gms.maps.CameraUpdateFactory;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.MapsInitializer;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.inject.Inject;
+import io.pivotal.weatherbus.app.repositories.LocationRepository;
+import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 import rx.subjects.PublishSubject;
@@ -24,7 +35,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.robolectric.Shadows.shadowOf;
 
 
@@ -35,39 +46,36 @@ public class MapActivityTest {
     WeatherBusService service;
 
     @Inject
-    LocationRepository locationRepository;
+    MapRepository mapRepository;
 
     @Mock
-    Location location;
+    GoogleMapWrapper mapWrapper;
 
     MapActivity subject;
 
-    PublishSubject<Location> locationEmitter;
     PublishSubject<List<StopForLocationResponse>> stopEmitter;
+    PublishSubject<GoogleMapWrapper> mapEmitter;
 
     @Before
     public void setUp() throws Exception {
-        locationEmitter = PublishSubject.create();
-        when(locationRepository.create(any(MapActivity.class))).thenReturn(locationEmitter);
-        subject = Robolectric.setupActivity(MapActivity.class);
-        double lat = 12.3;
-        double lng = 120.2;
-        when(location.getLatitude()).thenReturn(lat);
-        when(location.getLongitude()).thenReturn(lng);
+        mapEmitter = PublishSubject.create();
+        when(mapRepository.create(any(MapFragment.class), any(MapActivity.class))).thenReturn(mapEmitter);
 
         stopEmitter = PublishSubject.create();
-        when(service.getStopsForLocation(eq(lat), eq(lng), any(Double.class), any(Double.class)))
-                .thenReturn(stopEmitter);
+
+        subject = Robolectric.setupActivity(MapActivity.class);
     }
 
     @Test
     public void onCreate_shouldGetCurrentLocation() {
-        locationEmitter.onNext(location);
-        locationEmitter.onCompleted();
+        LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
+        when(mapWrapper.getLatLngBounds()).thenReturn(bounds);
+        mapEmitter.onNext(mapWrapper);
+
 
         TextView header = (TextView)subject.findViewById(R.id.currentLocation);
         assertThat(header).isNotNull();
-        assertThat(header.getText().toString()).isEqualTo("(12.3, 120.2)");
+        assertThat(header.getText().toString()).isEqualTo("(5.0, 5.0)");
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(lv).populateItems();
@@ -78,20 +86,22 @@ public class MapActivityTest {
 
     @Test
     public void onCreate_shouldShowNearbyStops() {
-        locationEmitter.onNext(location);
-        locationEmitter.onCompleted();
+        LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
+        when(mapWrapper.getLatLngBounds()).thenReturn(bounds);
+        when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
+        mapEmitter.onNext(mapWrapper);
 
         List<StopForLocationResponse> nearbyStops = new ArrayList<StopForLocationResponse>() {{
             add(new StopForLocationResponse());
             get(0).setId("1_1234");
             get(0).setName("STOP 0");
-            get(0).setLatitude(1.2);
-            get(0).setLongitude(1.3);
+            get(0).setLatitude(4.2);
+            get(0).setLongitude(4.3);
             add(new StopForLocationResponse());
             get(1).setId("1_2234");
             get(1).setName("STOP 1");
-            get(1).setLatitude(1.4);
-            get(1).setLongitude(1.5);
+            get(1).setLatitude(4.4);
+            get(1).setLongitude(4.5);
         }};
         stopEmitter.onNext(nearbyStops);
         stopEmitter.onCompleted();
@@ -102,8 +112,8 @@ public class MapActivityTest {
         assertThat(adapter.getCount()).isEqualTo(2);
 
         String stopResponse = (String)adapter.getItem(0);
-        assertThat(stopResponse).isEqualTo("STOP 0: (1.2, 1.3)");
+        assertThat(stopResponse).isEqualTo("STOP 0: (4.2, 4.3)");
         stopResponse = (String)adapter.getItem(1);
-        assertThat(stopResponse).isEqualTo("STOP 1: (1.4, 1.5)");
+        assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
     }
 }
