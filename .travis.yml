@@ -10,6 +10,8 @@ android:
     # Additional components
     - extra-google-google_play_services
     - addon-google_apis-google-21
+    - play-services-maps
+    - play-services-location
 
     # Specify at least one system image,
     # if you need to run emulator(s) during your tests
