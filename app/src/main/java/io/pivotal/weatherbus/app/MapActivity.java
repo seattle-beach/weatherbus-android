@@ -1,6 +1,5 @@
 package io.pivotal.weatherbus.app;
 
-import android.location.Location;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -9,14 +8,11 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.gms.maps.CameraUpdate;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
-import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
@@ -25,7 +21,6 @@ import roboguice.inject.InjectView;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
-import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
@@ -102,6 +97,7 @@ public class MapActivity extends RoboActivity {
     }
 
     private class GoogleMapSubscriber extends Subscriber<GoogleMapWrapper> {
+        GoogleMapWrapper googleMap;
         @Override
         public void onCompleted() {
 
@@ -113,8 +109,9 @@ public class MapActivity extends RoboActivity {
         }
 
         @Override
-        public void onNext(GoogleMapWrapper map) {
-            LatLngBounds bounds = map.getLatLngBounds();
+        public void onNext(GoogleMapWrapper googleMap) {
+            this.googleMap = googleMap;
+            LatLngBounds bounds = googleMap.getLatLngBounds();
             String text = String.format("(%.1f, %.1f)", bounds.getCenter().latitude, bounds.getCenter().longitude);
             currentLocationHeader.setText(text);
 
@@ -144,6 +141,8 @@ public class MapActivity extends RoboActivity {
                 for (StopForLocationResponse stop : stopForLocationResponses) {
                     String text = String.format("%s: (%.1f, %.1f)", stop.getName(), stop.getLatitude(), stop.getLongitude());
                     adapter.add(text);
+                    LatLng stopPosition = new LatLng(stop.getLatitude(),stop.getLongitude());
+                    googleMap.addMarker(new MarkerOptions().position(stopPosition));
                 }
             }
         }

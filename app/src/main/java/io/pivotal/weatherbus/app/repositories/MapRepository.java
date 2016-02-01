@@ -7,7 +7,6 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import io.pivotal.weatherbus.app.GoogleMapWrapper;
-import io.pivotal.weatherbus.app.MapActivity;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Func2;

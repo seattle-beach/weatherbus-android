@@ -1,13 +1,6 @@
 package io.pivotal.weatherbus.app;
 
 import android.app.Application;
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
-import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
-import io.pivotal.weatherbus.app.services.WeatherBusService;
-import retrofit.RestAdapter;
-import retrofit.client.OkClient;
 
 import static roboguice.RoboGuice.*;
 

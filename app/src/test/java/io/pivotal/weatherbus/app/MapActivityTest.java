@@ -1,19 +1,14 @@
 package io.pivotal.weatherbus.app;
 
-import android.location.Location;
 import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import com.google.android.gms.maps.CameraUpdate;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.MapsInitializer;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
-import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
@@ -21,10 +16,7 @@ import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 import rx.subjects.PublishSubject;
@@ -34,7 +26,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 import static org.robolectric.Shadows.shadowOf;
 
@@ -49,7 +40,7 @@ public class MapActivityTest {
     MapRepository mapRepository;
 
     @Mock
-    GoogleMapWrapper mapWrapper;
+    GoogleMapWrapper googleMap;
 
     MapActivity subject;
 
@@ -69,8 +60,8 @@ public class MapActivityTest {
     @Test
     public void onCreate_shouldGetCurrentLocation() {
         LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
-        when(mapWrapper.getLatLngBounds()).thenReturn(bounds);
-        mapEmitter.onNext(mapWrapper);
+        when(googleMap.getLatLngBounds()).thenReturn(bounds);
+        mapEmitter.onNext(googleMap);
 
 
         TextView header = (TextView)subject.findViewById(R.id.currentLocation);
@@ -87,9 +78,9 @@ public class MapActivityTest {
     @Test
     public void onCreate_shouldShowNearbyStops() {
         LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
-        when(mapWrapper.getLatLngBounds()).thenReturn(bounds);
+        when(googleMap.getLatLngBounds()).thenReturn(bounds);
         when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
-        mapEmitter.onNext(mapWrapper);
+        mapEmitter.onNext(googleMap);
 
         List<StopForLocationResponse> nearbyStops = new ArrayList<StopForLocationResponse>() {{
             add(new StopForLocationResponse());
@@ -115,5 +106,7 @@ public class MapActivityTest {
         assertThat(stopResponse).isEqualTo("STOP 0: (4.2, 4.3)");
         stopResponse = (String)adapter.getItem(1);
         assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
+
+        verify(googleMap, times(2)).addMarker(any(MarkerOptions.class));
     }
 }
