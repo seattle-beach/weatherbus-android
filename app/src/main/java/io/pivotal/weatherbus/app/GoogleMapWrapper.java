@@ -25,4 +25,8 @@ public class GoogleMapWrapper {
     public Marker addMarker(MarkerOptions options) {
         return map.addMarker(options);
     }
+
+    public void setMyLocationEnabled(boolean enabled) {
+        map.setMyLocationEnabled(enabled);
+    }
 }

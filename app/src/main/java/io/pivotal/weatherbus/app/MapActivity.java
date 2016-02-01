@@ -111,6 +111,8 @@ public class MapActivity extends RoboActivity {
         @Override
         public void onNext(GoogleMapWrapper googleMap) {
             this.googleMap = googleMap;
+            googleMap.setMyLocationEnabled(true);
+
             LatLngBounds bounds = googleMap.getLatLngBounds();
             String text = String.format("(%.1f, %.1f)", bounds.getCenter().latitude, bounds.getCenter().longitude);
             currentLocationHeader.setText(text);
