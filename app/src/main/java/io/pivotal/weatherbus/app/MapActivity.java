@@ -26,6 +26,7 @@ import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
 
 import java.util.List;
+import java.util.Locale;
 
 public class MapActivity extends RoboActivity {
     MapFragment mapFragment;
@@ -114,7 +115,7 @@ public class MapActivity extends RoboActivity {
             googleMap.setMyLocationEnabled(true);
 
             LatLngBounds bounds = googleMap.getLatLngBounds();
-            String text = String.format("(%.1f, %.1f)", bounds.getCenter().latitude, bounds.getCenter().longitude);
+            String text = String.format(Locale.getDefault(), "(%.1f, %.1f)", bounds.getCenter().latitude, bounds.getCenter().longitude);
             currentLocationHeader.setText(text);
 
             LatLng center = bounds.getCenter();
@@ -141,7 +142,7 @@ public class MapActivity extends RoboActivity {
             public void onNext(List<StopForLocationResponse> stopForLocationResponses) {
                 adapter.clear();
                 for (StopForLocationResponse stop : stopForLocationResponses) {
-                    String text = String.format("%s: (%.1f, %.1f)", stop.getName(), stop.getLatitude(), stop.getLongitude());
+                    String text = String.format(Locale.getDefault(), "%s: (%.1f, %.1f)", stop.getName(), stop.getLatitude(), stop.getLongitude());
                     adapter.add(text);
                     LatLng stopPosition = new LatLng(stop.getLatitude(),stop.getLongitude());
                     googleMap.addMarker(new MarkerOptions().position(stopPosition));

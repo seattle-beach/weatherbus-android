@@ -12,6 +12,7 @@ import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
+import java.lang.reflect.Array;
 import java.util.List;
 
 public class MainActivity extends RoboActivity {
@@ -28,7 +29,7 @@ public class MainActivity extends RoboActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1);
+        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
         stopList.setAdapter(adapter);
 
         button.setOnClickListener(new View.OnClickListener() {
