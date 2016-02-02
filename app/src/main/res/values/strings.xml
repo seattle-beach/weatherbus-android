@@ -2,7 +2,4 @@
     <string name="app_name">Weatherbus</string>
 
     <string name="action_settings">Settings</string>
-    <string name="no_stops_for_user">No stops found for this user</string>
-    <string name="submit_text">Submit</string>
-    <string name="username_prompt_text">Enter username</string>
 </resources>
