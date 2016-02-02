@@ -4,12 +4,7 @@ import retrofit.http.GET;
 import retrofit.http.Query;
 import rx.Observable;
 
-import java.util.List;
-
 public interface IRetrofitWeatherBusService {
-    @GET("/users/stops")
-    Observable<List<StopForUserResponse>> getStopsForUser(@Query("username") String username);
-
     @GET("/api/v1/stops")
     Observable<StopForLocationResponse> getStopsForLocation(@Query("lat") double lat,
                                                                   @Query("lng") double lng,
