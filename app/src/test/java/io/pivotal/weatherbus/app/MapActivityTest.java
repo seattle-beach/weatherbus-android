@@ -1,5 +1,6 @@
 package io.pivotal.weatherbus.app;
 
+import android.view.View;
 import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ListView;
@@ -46,6 +47,8 @@ public class MapActivityTest {
     PublishSubject<StopForLocationResponse> stopEmitter;
     PublishSubject<GoogleMapWrapper> mapEmitter;
 
+    StopForLocationResponse response;
+
     @Before
     public void setUp() throws Exception {
         mapEmitter = PublishSubject.create();
@@ -54,34 +57,12 @@ public class MapActivityTest {
         stopEmitter = PublishSubject.create();
 
         subject = Robolectric.setupActivity(MapActivity.class);
-    }
 
-    @Test
-    public void onCreate_shouldGetCurrentLocation() {
-        LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
-        when(googleMap.getLatLngBounds()).thenReturn(bounds);
-        mapEmitter.onNext(googleMap);
-
-
-        TextView header = (TextView)subject.findViewById(R.id.currentLocation);
-        assertThat(header).isNotNull();
-        assertThat(header.getText().toString()).isEqualTo("(5.0, 5.0)");
-
-        ListView lv = (ListView)subject.findViewById(R.id.stopList);
-        shadowOf(lv).populateItems();
-        Adapter adapter = ((HeaderViewListAdapter)lv.getAdapter()).getWrappedAdapter();
-        assertThat(adapter.getCount()).isEqualTo(1);
-        assertThat(adapter.getItem(0)).isEqualTo("Hello");
-    }
-
-    @Test
-    public void onCreate_shouldShowNearbyStops() {
         LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
         when(googleMap.getLatLngBounds()).thenReturn(bounds);
         when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
-        mapEmitter.onNext(googleMap);
 
-        StopForLocationResponse response = new StopForLocationResponse() {{
+        response = new StopForLocationResponse() {{
             setStops(new ArrayList<DataResponse>() {{
                 add(new DataResponse());
                 get(0).setId("1_1234");
@@ -95,7 +76,25 @@ public class MapActivityTest {
                 get(1).setLongitude(4.5);
             }});
         }};
+    }
 
+    @Test
+    public void onCreate_shouldShowProgressBar() {
+        assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.VISIBLE);
+    }
+
+    @Test
+    public void onNextGoogleMap_shouldSetListHeaderToLocation() {
+        mapEmitter.onNext(googleMap);
+
+        TextView header = (TextView)subject.findViewById(R.id.currentLocation);
+        assertThat(header).isNotNull();
+        assertThat(header.getText().toString()).isEqualTo("(5.0, 5.0)");
+    }
+
+    @Test
+    public void onNextListStops_shouldShowNearbyStops() {
+        mapEmitter.onNext(googleMap);
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
 
@@ -110,5 +109,14 @@ public class MapActivityTest {
         assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
 
         verify(googleMap, times(2)).addMarker(any(MarkerOptions.class));
+    }
+
+    @Test
+    public void onNextListStops_shouldRemoveProgressBar() {
+        mapEmitter.onNext(googleMap);
+        stopEmitter.onNext(response);
+        stopEmitter.onCompleted();
+
+        assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.GONE);
     }
 }

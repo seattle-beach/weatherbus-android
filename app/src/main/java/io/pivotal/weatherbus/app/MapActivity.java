@@ -4,10 +4,8 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.view.View;
+import android.widget.*;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -32,6 +30,7 @@ public class MapActivity extends RoboActivity {
     private CompositeSubscription subscriptions = Subscriptions.from();
 
     @InjectView(R.id.stopList) ListView stopList;
+    @InjectView(R.id.progressBar) ProgressBar progressBar;
     ArrayAdapter<String> adapter;
 
     TextView currentLocationHeader;
@@ -53,7 +52,6 @@ public class MapActivity extends RoboActivity {
         adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
         adapter.clear();
         stopList.setAdapter(adapter);
-        adapter.add("Hello");
 
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
 
@@ -145,6 +143,9 @@ public class MapActivity extends RoboActivity {
                     LatLng stopPosition = new LatLng(stop.getLatitude(),stop.getLongitude());
                     googleMap.addMarker(new MarkerOptions().position(stopPosition));
                 }
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);
+                stopList.setLayoutParams(params);
+                progressBar.setVisibility(View.GONE);
             }
         }
     }
