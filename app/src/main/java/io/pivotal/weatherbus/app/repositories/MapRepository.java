@@ -1,12 +1,14 @@
 package io.pivotal.weatherbus.app.repositories;
 
-import android.content.Context;
+import android.app.Activity;
 import android.location.Location;
+import android.widget.ListView;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import io.pivotal.weatherbus.app.GoogleMapWrapper;
+import io.pivotal.weatherbus.app.R;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Func2;
@@ -19,15 +21,17 @@ public class MapRepository {
         this.locationRepository = locationRepository;
     }
 
-    public Observable<GoogleMapWrapper> create(final MapFragment fragment, Context context) {
+    public Observable<GoogleMapWrapper> create(final MapFragment fragment, final Activity activity) {
         Observable<GoogleMapWrapper> googleMap = createMap(fragment);
-        Observable<Location> location = locationRepository.create(context);
+        Observable<Location> location = locationRepository.create(activity);
         return Observable.zip(googleMap, location, new Func2<GoogleMapWrapper, Location, GoogleMapWrapper>() {
             @Override
-            public GoogleMapWrapper call(GoogleMapWrapper googleMapWrapper, Location location) {
+            public GoogleMapWrapper call(GoogleMapWrapper googleMap, Location location) {
                 LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                googleMapWrapper.moveCamera(latLng);
-                return googleMapWrapper;
+                ListView stops = (ListView) activity.findViewById(R.id.stopList);
+                googleMap.setPadding(0, 0 ,0, stops.getTop());
+                googleMap.moveCamera(latLng);
+                return googleMap;
             }
         });
     }

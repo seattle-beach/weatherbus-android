@@ -31,8 +31,7 @@ public class MapActivity extends RoboActivity {
     MapFragment mapFragment;
     private CompositeSubscription subscriptions = Subscriptions.from();
 
-    @InjectView(R.id.stopList)
-    ListView stopList;
+    @InjectView(R.id.stopList) ListView stopList;
     ArrayAdapter<String> adapter;
 
     TextView currentLocationHeader;

@@ -29,4 +29,8 @@ public class GoogleMapWrapper {
     public void setMyLocationEnabled(boolean enabled) {
         map.setMyLocationEnabled(enabled);
     }
+
+    public void setPadding(int left, int top, int right, int bottom) {
+        map.setPadding(left,top,right,bottom);
+    }
 }
