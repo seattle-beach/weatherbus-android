@@ -10,8 +10,8 @@ public interface IRetrofitWeatherBusService {
     @GET("/users/stops")
     Observable<List<StopForUserResponse>> getStopsForUser(@Query("username") String username);
 
-    @GET("/buses/stops")
-    Observable<List<StopForLocationResponse>> getStopsForLocation(@Query("lat") double lat,
+    @GET("/api/v1/stops")
+    Observable<StopForLocationResponse> getStopsForLocation(@Query("lat") double lat,
                                                                   @Query("lng") double lng,
                                                                   @Query("latSpan") double latSpan,
                                                                   @Query("lngSpan") double lngSpan);

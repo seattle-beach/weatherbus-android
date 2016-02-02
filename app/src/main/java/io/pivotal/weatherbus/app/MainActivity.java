@@ -12,7 +12,6 @@ import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 
-import java.lang.reflect.Array;
 import java.util.List;
 
 public class MainActivity extends RoboActivity {

@@ -25,7 +25,6 @@ import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
 
-import java.util.List;
 import java.util.Locale;
 
 public class MapActivity extends RoboActivity {
@@ -127,7 +126,7 @@ public class MapActivity extends RoboActivity {
                     .subscribe(new StopForLocationResponsesSubscriber());
         }
 
-        private class StopForLocationResponsesSubscriber extends Subscriber<List<StopForLocationResponse>> {
+        private class StopForLocationResponsesSubscriber extends Subscriber<StopForLocationResponse> {
             @Override
             public void onCompleted() {
 
@@ -139,9 +138,9 @@ public class MapActivity extends RoboActivity {
             }
 
             @Override
-            public void onNext(List<StopForLocationResponse> stopForLocationResponses) {
+            public void onNext(StopForLocationResponse stopForLocationResponse) {
                 adapter.clear();
-                for (StopForLocationResponse stop : stopForLocationResponses) {
+                for (StopForLocationResponse.DataResponse stop : stopForLocationResponse.getStops()) {
                     String text = String.format(Locale.getDefault(), "%s: (%.1f, %.1f)", stop.getName(), stop.getLatitude(), stop.getLongitude());
                     adapter.add(text);
                     LatLng stopPosition = new LatLng(stop.getLatitude(),stop.getLongitude());

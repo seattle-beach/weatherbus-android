@@ -22,7 +22,6 @@ import org.robolectric.annotation.Config;
 import rx.subjects.PublishSubject;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -44,7 +43,7 @@ public class MapActivityTest {
 
     MapActivity subject;
 
-    PublishSubject<List<StopForLocationResponse>> stopEmitter;
+    PublishSubject<StopForLocationResponse> stopEmitter;
     PublishSubject<GoogleMapWrapper> mapEmitter;
 
     @Before
@@ -82,19 +81,22 @@ public class MapActivityTest {
         when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
         mapEmitter.onNext(googleMap);
 
-        List<StopForLocationResponse> nearbyStops = new ArrayList<StopForLocationResponse>() {{
-            add(new StopForLocationResponse());
-            get(0).setId("1_1234");
-            get(0).setName("STOP 0");
-            get(0).setLatitude(4.2);
-            get(0).setLongitude(4.3);
-            add(new StopForLocationResponse());
-            get(1).setId("1_2234");
-            get(1).setName("STOP 1");
-            get(1).setLatitude(4.4);
-            get(1).setLongitude(4.5);
+        StopForLocationResponse response = new StopForLocationResponse() {{
+            setStops(new ArrayList<DataResponse>() {{
+                add(new DataResponse());
+                get(0).setId("1_1234");
+                get(0).setName("STOP 0");
+                get(0).setLatitude(4.2);
+                get(0).setLongitude(4.3);
+                add(new DataResponse());
+                get(1).setId("1_2234");
+                get(1).setName("STOP 1");
+                get(1).setLatitude(4.4);
+                get(1).setLongitude(4.5);
+            }});
         }};
-        stopEmitter.onNext(nearbyStops);
+
+        stopEmitter.onNext(response);
         stopEmitter.onCompleted();
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
