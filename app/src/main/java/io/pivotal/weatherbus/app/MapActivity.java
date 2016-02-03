@@ -11,6 +11,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
+import io.pivotal.weatherbus.app.model.BusStop;
+import io.pivotal.weatherbus.app.model.BusStopAdapter;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
@@ -23,6 +25,7 @@ import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
 
+import java.util.List;
 import java.util.Locale;
 
 public class MapActivity extends RoboActivity {
@@ -31,12 +34,15 @@ public class MapActivity extends RoboActivity {
 
     @InjectView(R.id.stopList) ListView stopList;
     @InjectView(R.id.progressBar) ProgressBar progressBar;
-    ArrayAdapter<String> adapter;
+    BusStopAdapter adapter;
 
     TextView currentLocationHeader;
 
     @Inject
     WeatherBusService service;
+
+    @Inject
+    SavedStops savedStops;
 
     @Inject
     MapRepository mapRepository;
@@ -49,9 +55,18 @@ public class MapActivity extends RoboActivity {
         LayoutInflater inflater = getLayoutInflater();
         currentLocationHeader = (TextView) inflater.inflate(R.layout.current_location, stopList, false);
         stopList.addHeaderView(currentLocationHeader);
-        adapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+        adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         adapter.clear();
         stopList.setAdapter(adapter);
+        stopList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String stopId = adapter.getItem(position - 1).getResponse().getId();
+                savedStops.addSavedStop(stopId);
+                adapter.getItem(position - 1).setFavorite(true);
+                adapter.notifyDataSetChanged();
+            }
+        });
 
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
 
@@ -61,8 +76,6 @@ public class MapActivity extends RoboActivity {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .subscribe(new GoogleMapSubscriber()));
-
-        //subscriptions.add(googleMapWrapperObservable.subscribe(new GoogleMapSubscriber()));
     }
 
     @Override
@@ -137,10 +150,12 @@ public class MapActivity extends RoboActivity {
             @Override
             public void onNext(StopForLocationResponse stopForLocationResponse) {
                 adapter.clear();
-                for (StopForLocationResponse.DataResponse stop : stopForLocationResponse.getStops()) {
-                    String text = String.format(Locale.getDefault(), "%s: (%.1f, %.1f)", stop.getName(), stop.getLatitude(), stop.getLongitude());
-                    adapter.add(text);
-                    LatLng stopPosition = new LatLng(stop.getLatitude(),stop.getLongitude());
+                List<String> favoriteStops = savedStops.getSavedStops();
+                for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
+                    BusStop busStop = new BusStop(stopResponse);
+                    busStop.setFavorite(favoriteStops.contains(stopResponse.getId()));
+                    adapter.add(busStop);
+                    LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
                     googleMap.addMarker(new MarkerOptions().position(stopPosition));
                 }
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);

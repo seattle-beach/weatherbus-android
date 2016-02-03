@@ -8,10 +8,10 @@ import java.util.List;
 @Data
 public class StopForLocationResponse {
     @SerializedName("data")
-    List<DataResponse> stops;
+    List<BusStopResponse> stops;
 
     @Data
-    public class DataResponse {
+    public class BusStopResponse {
         String id;
         String name;
         double latitude;

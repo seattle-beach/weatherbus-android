@@ -38,4 +38,10 @@ public class TestApplicationModule extends AbstractModule {
     MapRepository getMapRepository() {
         return mock(MapRepository.class);
     }
+
+    @Provides
+    @Singleton
+    SavedStops getSavedStops() {
+        return mock(SavedStops.class);
+    }
 }

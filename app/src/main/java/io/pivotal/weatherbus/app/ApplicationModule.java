@@ -1,5 +1,6 @@
 package io.pivotal.weatherbus.app;
 
+import android.content.SharedPreferences;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -16,6 +17,7 @@ public class ApplicationModule extends AbstractModule {
     protected void configure() {
 
     }
+
 
     @Provides
     @Singleton
@@ -42,5 +44,11 @@ public class ApplicationModule extends AbstractModule {
     @Singleton
     MapRepository getMapRepository(LocationRepository locationRepository) {
         return new MapRepository(locationRepository);
+    }
+
+    @Provides
+    @Singleton
+    SavedStops getSavedStops(SharedPreferences settings) {
+        return new SavedStops(settings);
     }
 }

@@ -10,6 +10,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
+import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
@@ -39,6 +40,9 @@ public class MapActivityTest {
     @Inject
     MapRepository mapRepository;
 
+    @Inject
+    SavedStops savedStops;
+
     @Mock
     GoogleMapWrapper googleMap;
 
@@ -63,13 +67,13 @@ public class MapActivityTest {
         when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
 
         response = new StopForLocationResponse() {{
-            setStops(new ArrayList<DataResponse>() {{
-                add(new DataResponse());
+            setStops(new ArrayList<BusStopResponse>() {{
+                add(new BusStopResponse());
                 get(0).setId("1_1234");
                 get(0).setName("STOP 0");
                 get(0).setLatitude(4.2);
                 get(0).setLongitude(4.3);
-                add(new DataResponse());
+                add(new BusStopResponse());
                 get(1).setId("1_2234");
                 get(1).setName("STOP 1");
                 get(1).setLatitude(4.4);
@@ -94,18 +98,16 @@ public class MapActivityTest {
 
     @Test
     public void onNextListStops_shouldShowNearbyStops() {
-        mapEmitter.onNext(googleMap);
-        stopEmitter.onNext(response);
-        stopEmitter.onCompleted();
+        fullfillRequests();
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(lv).populateItems();
         Adapter adapter = ((HeaderViewListAdapter)lv.getAdapter()).getWrappedAdapter();
         assertThat(adapter.getCount()).isEqualTo(2);
 
-        String stopResponse = (String)adapter.getItem(0);
+        String stopResponse = ((TextView) (lv.getChildAt(1))).getText().toString();
         assertThat(stopResponse).isEqualTo("STOP 0: (4.2, 4.3)");
-        stopResponse = (String)adapter.getItem(1);
+        stopResponse = ((TextView) (lv.getChildAt(2))).getText().toString();
         assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
 
         verify(googleMap, times(2)).addMarker(any(MarkerOptions.class));
@@ -113,10 +115,43 @@ public class MapActivityTest {
 
     @Test
     public void onNextListStops_shouldRemoveProgressBar() {
+        fullfillRequests();
+
+        assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.GONE);
+    }
+
+    @Test
+    public void onNextListStops_ifStopIsFavorite_ShouldShowAStar() {
+        when(savedStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
+            add("1_1234");
+            add("1_2234");
+        }});
+
+        fullfillRequests();
+
+        ListView lv = (ListView)subject.findViewById(R.id.stopList);
+        shadowOf(lv).populateItems();
+        String firstStop = ((TextView) (lv.getChildAt(1))).getText().toString();
+        assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
+    }
+
+    @Test
+    public void onTapStop_shouldAddToFavoriteStops() {
+        fullfillRequests();
+        ListView lv = (ListView)subject.findViewById(R.id.stopList);
+        shadowOf(lv).populateItems();
+        Adapter adapter = ((HeaderViewListAdapter)lv.getAdapter()).getWrappedAdapter();
+        lv.performItemClick(lv.getChildAt(0),1,adapter.getItemId(0));
+
+        String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
+        verify(savedStops,times(1)).addSavedStop(busStopId);
+        String firstStop = ((TextView) (lv.getChildAt(1))).getText().toString();
+        assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
+    }
+
+    private void fullfillRequests() {
         mapEmitter.onNext(googleMap);
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
-
-        assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.GONE);
     }
 }

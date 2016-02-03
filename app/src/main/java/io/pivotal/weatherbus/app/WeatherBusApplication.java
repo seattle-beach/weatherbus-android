@@ -8,6 +8,7 @@ public class WeatherBusApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
-        setBaseApplicationInjector(this, DEFAULT_STAGE, newDefaultRoboModule(this), new ApplicationModule());
+        ApplicationModule module = new ApplicationModule();
+        setBaseApplicationInjector(this, DEFAULT_STAGE, newDefaultRoboModule(this), module);
     }
 }
