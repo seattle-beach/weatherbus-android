@@ -168,7 +168,9 @@ public class MapActivity extends RoboActivity {
                     busStop.setFavorite(isFavorite);
                     adapter.add(busStop);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                    busStop.setMarker(googleMap.addMarker(new MarkerOptions().position(stopPosition)));
+                    busStop.setMarker(googleMap.addMarker(new MarkerOptions()
+                            .position(stopPosition)
+                            .title(busStop.getResponse().getName())));
                     busStop.getMarker().setFavorite(isFavorite);
                 }
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);
