@@ -149,6 +149,23 @@ public class MapActivityTest {
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
     }
 
+    @Test
+    public void onLongClick_shouldRemoveFavoriteStops() {
+        fullfillRequests();
+        ListView stopList = (ListView)subject.findViewById(R.id.stopList);
+        shadowOf(stopList).populateItems();
+        Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
+
+        stopList.performItemClick(stopList.getChildAt(0),1,adapter.getItemId(0));
+        assertThat(stopList.getOnItemLongClickListener().
+                onItemLongClick(stopList,stopList.getChildAt(1),1,adapter.getItemId(0))).isEqualTo(true);
+
+        String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
+        verify(savedStops,times(1)).deleteSavedStop(busStopId);
+        String firstStop = ((TextView) (stopList.getChildAt(1))).getText().toString();
+        assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
+    }
+
     private void fullfillRequests() {
         mapEmitter.onNext(googleMap);
         stopEmitter.onNext(response);

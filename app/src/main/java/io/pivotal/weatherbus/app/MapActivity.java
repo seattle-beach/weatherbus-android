@@ -61,10 +61,23 @@ public class MapActivity extends RoboActivity {
         stopList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String stopId = adapter.getItem(position - 1).getResponse().getId();
+                BusStop busStop = adapter.getItem(position - 1);
+                String stopId = busStop.getResponse().getId();
                 savedStops.addSavedStop(stopId);
-                adapter.getItem(position - 1).setFavorite(true);
+                busStop.setFavorite(true);
                 adapter.notifyDataSetChanged();
+            }
+        });
+
+        stopList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                BusStop busStop = adapter.getItem(position - 1);
+                String stopId = busStop.getResponse().getId();
+                savedStops.deleteSavedStop(stopId);
+                busStop.setFavorite(false);
+                adapter.notifyDataSetChanged();
+                return true;
             }
         });
 
