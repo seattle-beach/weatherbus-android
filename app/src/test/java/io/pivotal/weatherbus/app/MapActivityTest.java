@@ -46,6 +46,9 @@ public class MapActivityTest {
     @Mock
     GoogleMapWrapper googleMap;
 
+    @Mock
+    GoogleMapWrapper.MarkerWrapper marker;
+
     MapActivity subject;
 
     PublishSubject<StopForLocationResponse> stopEmitter;
@@ -65,6 +68,7 @@ public class MapActivityTest {
         LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
         when(googleMap.getLatLngBounds()).thenReturn(bounds);
         when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
+        when(googleMap.addMarker(any(MarkerOptions.class))).thenReturn(marker);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
@@ -121,10 +125,9 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onNextListStops_ifStopIsFavorite_ShouldShowAStar() {
+    public void onNextListStops_ifStopIsFavorite_ShouldShowAStarAndColorMarker() {
         when(savedStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
             add("1_1234");
-            add("1_2234");
         }});
 
         fullfillRequests();
@@ -133,30 +136,41 @@ public class MapActivityTest {
         shadowOf(lv).populateItems();
         String firstStop = ((TextView) (lv.getChildAt(1))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
+        verify(googleMap,times(2)).addMarker(any(MarkerOptions.class));
+        verify(marker,times(1)).setFavorite(false);
+        verify(marker,times(1)).setFavorite(true);
     }
 
     @Test
-    public void onTapStop_shouldAddToFavoriteStops() {
-        fullfillRequests();
-        ListView lv = (ListView)subject.findViewById(R.id.stopList);
-        shadowOf(lv).populateItems();
-        Adapter adapter = ((HeaderViewListAdapter)lv.getAdapter()).getWrappedAdapter();
-        lv.performItemClick(lv.getChildAt(0),1,adapter.getItemId(0));
-
-        String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
-        verify(savedStops,times(1)).addSavedStop(busStopId);
-        String firstStop = ((TextView) (lv.getChildAt(1))).getText().toString();
-        assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
-    }
-
-    @Test
-    public void onLongClick_shouldRemoveFavoriteStops() {
+    public void onLongClick_whenIsNotFavoriteStop_shouldAddToFavoriteStops() {
         fullfillRequests();
         ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
         Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
 
-        stopList.performItemClick(stopList.getChildAt(0),1,adapter.getItemId(0));
+        assertThat(stopList.getOnItemLongClickListener().
+                onItemLongClick(stopList,stopList.getChildAt(1),1,adapter.getItemId(0))).isEqualTo(true);
+
+        String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
+        verify(savedStops,times(1)).addSavedStop(busStopId);
+        String firstStop = ((TextView) (stopList.getChildAt(1))).getText().toString();
+        assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
+        verify(marker,times(1)).setFavorite(true);
+    }
+
+    @Test
+    public void onLongClick_shouldRemoveFavoriteStops() {
+
+        when(savedStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
+            add("1_1234");
+            add("1_2234");
+        }});
+
+        fullfillRequests();
+        ListView stopList = (ListView)subject.findViewById(R.id.stopList);
+        shadowOf(stopList).populateItems();
+        Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
+
         assertThat(stopList.getOnItemLongClickListener().
                 onItemLongClick(stopList,stopList.getChildAt(1),1,adapter.getItemId(0))).isEqualTo(true);
 
@@ -164,6 +178,7 @@ public class MapActivityTest {
         verify(savedStops,times(1)).deleteSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(1))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
+        verify(marker,times(1)).setFavorite(false);
     }
 
     private void fullfillRequests() {

@@ -2,10 +2,7 @@ package io.pivotal.weatherbus.app;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.*;
 
 public class GoogleMapWrapper {
     GoogleMap map;
@@ -22,8 +19,8 @@ public class GoogleMapWrapper {
         return map.getProjection().getVisibleRegion().latLngBounds;
     }
 
-    public Marker addMarker(MarkerOptions options) {
-        return map.addMarker(options);
+    public MarkerWrapper addMarker(MarkerOptions options) {
+        return new MarkerWrapper(map.addMarker(options));
     }
 
     public void setMyLocationEnabled(boolean enabled) {
@@ -32,5 +29,22 @@ public class GoogleMapWrapper {
 
     public void setPadding(int left, int top, int right, int bottom) {
         map.setPadding(left,top,right,bottom);
+    }
+
+    public class MarkerWrapper {
+        Marker marker;
+
+        public MarkerWrapper(Marker marker) {
+            this.marker = marker;
+        }
+
+        public void setFavorite(boolean isFavorite) {
+            if (isFavorite) {
+                marker.setIcon(BitmapDescriptorFactory.defaultMarker());
+            }
+            else {
+                marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
+            }
+        }
     }
 }

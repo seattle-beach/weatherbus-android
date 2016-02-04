@@ -58,24 +58,22 @@ public class MapActivity extends RoboActivity {
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         adapter.clear();
         stopList.setAdapter(adapter);
-        stopList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                BusStop busStop = adapter.getItem(position - 1);
-                String stopId = busStop.getResponse().getId();
-                savedStops.addSavedStop(stopId);
-                busStop.setFavorite(true);
-                adapter.notifyDataSetChanged();
-            }
-        });
 
         stopList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+
                 BusStop busStop = adapter.getItem(position - 1);
                 String stopId = busStop.getResponse().getId();
-                savedStops.deleteSavedStop(stopId);
-                busStop.setFavorite(false);
+
+                boolean isFavorite = busStop.isFavorite();
+                if (isFavorite) {
+                    savedStops.deleteSavedStop(stopId);
+                } else {
+                    savedStops.addSavedStop(stopId);
+                }
+                busStop.setFavorite(!isFavorite);
+                busStop.getMarker().setFavorite(!isFavorite);
                 adapter.notifyDataSetChanged();
                 return true;
             }
@@ -166,10 +164,12 @@ public class MapActivity extends RoboActivity {
                 List<String> favoriteStops = savedStops.getSavedStops();
                 for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
                     BusStop busStop = new BusStop(stopResponse);
-                    busStop.setFavorite(favoriteStops.contains(stopResponse.getId()));
+                    boolean isFavorite = favoriteStops.contains(stopResponse.getId());
+                    busStop.setFavorite(isFavorite);
                     adapter.add(busStop);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                    googleMap.addMarker(new MarkerOptions().position(stopPosition));
+                    busStop.setMarker(googleMap.addMarker(new MarkerOptions().position(stopPosition)));
+                    busStop.getMarker().setFavorite(isFavorite);
                 }
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);
                 stopList.setLayoutParams(params);
