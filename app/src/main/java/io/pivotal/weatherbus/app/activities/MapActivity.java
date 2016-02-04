@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app;
+package io.pivotal.weatherbus.app.activities;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -11,6 +11,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
+import io.pivotal.weatherbus.app.GoogleMapWrapper;
+import io.pivotal.weatherbus.app.R;
+import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.model.BusStopAdapter;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
