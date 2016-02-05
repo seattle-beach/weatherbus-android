@@ -15,4 +15,8 @@ public class WeatherBusService {
                                                                          double longitudeSpan) {
         return weatherBusService.getStopsForLocation(latitude, longitude, latitudeSpan, longitudeSpan);
     }
+
+    public Observable<StopResponse> getStopInformation(String stopId) {
+        return weatherBusService.getStopInformation(stopId);
+    }
 }

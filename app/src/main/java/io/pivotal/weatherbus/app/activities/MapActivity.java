@@ -1,5 +1,6 @@
 package io.pivotal.weatherbus.app.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -61,6 +62,17 @@ public class MapActivity extends RoboActivity {
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         adapter.clear();
         stopList.setAdapter(adapter);
+
+        stopList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(MapActivity.this, BusStopActivity.class);
+                BusStop busStop = adapter.getItem(position - 1);
+                intent.putExtra("stopId", busStop.getResponse().getId());
+                intent.putExtra("stopName", busStop.getResponse().getName());
+                startActivity(intent);
+            }
+        });
 
         stopList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override

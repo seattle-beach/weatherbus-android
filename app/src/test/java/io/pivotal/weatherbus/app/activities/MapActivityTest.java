@@ -1,5 +1,7 @@
 package io.pivotal.weatherbus.app.activities;
 
+import android.content.ComponentName;
+import android.content.Intent;
 import android.view.View;
 import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
@@ -14,7 +16,6 @@ import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.GoogleMapWrapper;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
-import io.pivotal.weatherbus.app.activities.MapActivity;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
@@ -184,6 +185,20 @@ public class MapActivityTest {
         String firstStop = ((TextView) (stopList.getChildAt(1))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
         verify(marker,times(1)).setFavorite(false);
+    }
+
+    @Test
+    public void onClick_itShouldOpenBusStopActivity() {
+        fullfillRequests();
+        ListView stopList = (ListView)subject.findViewById(R.id.stopList);
+        shadowOf(stopList).populateItems();
+        Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
+        stopList.performItemClick(stopList.getChildAt(1), 1, adapter.getItemId(0));
+        Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
+        assertThat(intent.getStringExtra("stopId")).isEqualTo("1_1234");
+        assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 0");
+        assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
+
     }
 
     private void fullfillRequests() {
