@@ -7,7 +7,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
-import io.pivotal.weatherbus.app.GoogleMapWrapper;
+import io.pivotal.weatherbus.app.WeatherBusMap;
 import io.pivotal.weatherbus.app.R;
 import rx.Observable;
 import rx.Subscriber;
@@ -21,12 +21,12 @@ public class MapRepository {
         this.locationRepository = locationRepository;
     }
 
-    public Observable<GoogleMapWrapper> create(final MapFragment fragment, final Activity activity) {
-        Observable<GoogleMapWrapper> googleMap = createMap(fragment);
+    public Observable<WeatherBusMap> create(final MapFragment fragment, final Activity activity) {
+        Observable<WeatherBusMap> googleMap = createMap(fragment);
         Observable<Location> location = locationRepository.create(activity);
-        return Observable.zip(googleMap, location, new Func2<GoogleMapWrapper, Location, GoogleMapWrapper>() {
+        return Observable.zip(googleMap, location, new Func2<WeatherBusMap, Location, WeatherBusMap>() {
             @Override
-            public GoogleMapWrapper call(GoogleMapWrapper googleMap, Location location) {
+            public WeatherBusMap call(WeatherBusMap googleMap, Location location) {
                 LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
                 ListView stops = (ListView) activity.findViewById(R.id.stopList);
                 googleMap.setPadding(0, 0 ,0, stops.getTop());
@@ -36,13 +36,13 @@ public class MapRepository {
         });
     }
 
-    public Observable<GoogleMapWrapper> createMap(final MapFragment mapFragment) {
-        return Observable.create(new Observable.OnSubscribe<GoogleMapWrapper>() {
+    public Observable<WeatherBusMap> createMap(final MapFragment mapFragment) {
+        return Observable.create(new Observable.OnSubscribe<WeatherBusMap>() {
             @Override
-            public void call(final Subscriber<? super GoogleMapWrapper> subscriber) {
+            public void call(final Subscriber<? super WeatherBusMap> subscriber) {
                 OnMapReadyCallback mapReadyCallback = new OnMapReadyCallback() {
                     public void onMapReady(GoogleMap googleMap) {
-                        subscriber.onNext(new GoogleMapWrapper(googleMap));
+                        subscriber.onNext(new WeatherBusMap(googleMap));
                     }
                 };
                 mapFragment.getMapAsync(mapReadyCallback);

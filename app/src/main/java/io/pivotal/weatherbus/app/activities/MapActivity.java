@@ -12,7 +12,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
-import io.pivotal.weatherbus.app.GoogleMapWrapper;
+import io.pivotal.weatherbus.app.WeatherBusMap;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.model.BusStop;
@@ -96,7 +96,7 @@ public class MapActivity extends RoboActivity {
 
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
 
-        Observable<GoogleMapWrapper> googleMap = mapRepository.create(mapFragment, this);
+        Observable<WeatherBusMap> googleMap = mapRepository.create(mapFragment, this);
 
         subscriptions.add(googleMap
                 .observeOn(AndroidSchedulers.mainThread())
@@ -132,8 +132,8 @@ public class MapActivity extends RoboActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class GoogleMapSubscriber extends Subscriber<GoogleMapWrapper> {
-        GoogleMapWrapper googleMap;
+    private class GoogleMapSubscriber extends Subscriber<WeatherBusMap> {
+        WeatherBusMap googleMap;
         @Override
         public void onCompleted() {
 
@@ -145,7 +145,7 @@ public class MapActivity extends RoboActivity {
         }
 
         @Override
-        public void onNext(GoogleMapWrapper googleMap) {
+        public void onNext(WeatherBusMap googleMap) {
             this.googleMap = googleMap;
             googleMap.setMyLocationEnabled(true);
 

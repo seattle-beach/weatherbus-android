@@ -4,10 +4,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.*;
 
-public class GoogleMapWrapper {
+public class WeatherBusMap {
     GoogleMap map;
 
-    public GoogleMapWrapper(GoogleMap map) {
+    public WeatherBusMap(GoogleMap map) {
         this.map = map;
     }
 
@@ -19,8 +19,8 @@ public class GoogleMapWrapper {
         return map.getProjection().getVisibleRegion().latLngBounds;
     }
 
-    public MarkerWrapper addMarker(MarkerOptions options) {
-        return new MarkerWrapper(map.addMarker(options));
+    public WeatherBusMarker addMarker(MarkerOptions options) {
+        return new WeatherBusMarker(map.addMarker(options));
     }
 
     public void setMyLocationEnabled(boolean enabled) {
@@ -31,10 +31,10 @@ public class GoogleMapWrapper {
         map.setPadding(left,top,right,bottom);
     }
 
-    public class MarkerWrapper {
+    public class WeatherBusMarker {
         Marker marker;
 
-        public MarkerWrapper(Marker marker) {
+        public WeatherBusMarker(Marker marker) {
             this.marker = marker;
         }
 

@@ -13,7 +13,7 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.BuildConfig;
-import io.pivotal.weatherbus.app.GoogleMapWrapper;
+import io.pivotal.weatherbus.app.WeatherBusMap;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.model.BusStop;
@@ -50,15 +50,15 @@ public class MapActivityTest {
     SavedStops savedStops;
 
     @Mock
-    GoogleMapWrapper googleMap;
+    WeatherBusMap googleMap;
 
     @Mock
-    GoogleMapWrapper.MarkerWrapper marker;
+    WeatherBusMap.WeatherBusMarker marker;
 
     MapActivity subject;
 
     PublishSubject<StopForLocationResponse> stopEmitter;
-    PublishSubject<GoogleMapWrapper> mapEmitter;
+    PublishSubject<WeatherBusMap> mapEmitter;
 
     StopForLocationResponse response;
 
@@ -108,7 +108,7 @@ public class MapActivityTest {
 
     @Test
     public void onNextListStops_shouldShowNearbyStops() {
-        fullfillRequests();
+        fulfillRequests();
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(lv).populateItems();
@@ -125,7 +125,7 @@ public class MapActivityTest {
 
     @Test
     public void onNextListStops_shouldRemoveProgressBar() {
-        fullfillRequests();
+        fulfillRequests();
 
         assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.GONE);
     }
@@ -136,7 +136,7 @@ public class MapActivityTest {
             add("1_1234");
         }});
 
-        fullfillRequests();
+        fulfillRequests();
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(lv).populateItems();
@@ -149,7 +149,7 @@ public class MapActivityTest {
 
     @Test
     public void onLongClick_whenIsNotFavoriteStop_shouldAddToFavoriteStops() {
-        fullfillRequests();
+        fulfillRequests();
         ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
         Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
@@ -172,7 +172,7 @@ public class MapActivityTest {
             add("1_2234");
         }});
 
-        fullfillRequests();
+        fulfillRequests();
         ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
         Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
@@ -189,7 +189,7 @@ public class MapActivityTest {
 
     @Test
     public void onClick_itShouldOpenBusStopActivity() {
-        fullfillRequests();
+        fulfillRequests();
         ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
         Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
@@ -201,7 +201,7 @@ public class MapActivityTest {
 
     }
 
-    private void fullfillRequests() {
+    private void fulfillRequests() {
         mapEmitter.onNext(googleMap);
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
