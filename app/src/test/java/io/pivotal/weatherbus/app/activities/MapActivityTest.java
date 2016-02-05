@@ -7,15 +7,16 @@ import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.BuildConfig;
-import io.pivotal.weatherbus.app.WeatherBusMap;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
+import io.pivotal.weatherbus.app.WeatherBusMap;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
@@ -25,6 +26,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 import rx.subjects.PublishSubject;
@@ -62,6 +65,8 @@ public class MapActivityTest {
 
     StopForLocationResponse response;
 
+    GoogleMap.OnMarkerClickListener onMarkerClickListener;
+
     @Before
     public void setUp() throws Exception {
         mapEmitter = PublishSubject.create();
@@ -75,6 +80,7 @@ public class MapActivityTest {
         when(googleMap.getLatLngBounds()).thenReturn(bounds);
         when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
         when(googleMap.addMarker(any(MarkerOptions.class))).thenReturn(marker);
+        when(googleMap.getMarker(any(String.class))).thenReturn(marker);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
@@ -199,6 +205,19 @@ public class MapActivityTest {
         assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 0");
         assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
 
+    }
+
+    @Test
+    public void onMarkerClick_theListViewShouldScrollToTheStop() {
+        fulfillRequests();
+        when(googleMap.setOnMarkerClickListener(any(GoogleMap.OnMarkerClickListener.class)))
+                .then(new Answer<Void>() {
+                    @Override
+                    public Void answer(InvocationOnMock invocation) throws Throwable {
+                        onMarkerClickListener = (GoogleMap.OnMarkerClickListener) invocation.getArguments()[0];
+                        return null;
+                    }
+                });
     }
 
     private void fulfillRequests() {
