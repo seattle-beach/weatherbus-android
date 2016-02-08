@@ -15,6 +15,7 @@ import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.WeatherBusMap;
+import io.pivotal.weatherbus.app.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.model.BusStopAdapter;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
@@ -97,7 +98,7 @@ public class MapActivity extends RoboActivity {
                 }
                 busStop.setFavorite(!isFavorite);
                 String markerId = markerIds.get(busStop);
-                WeatherBusMap.WeatherBusMarker marker = googleMap.getMarker(markerId);
+                WeatherBusMarker marker = googleMap.getMarker(markerId);
                 marker.setFavorite(!isFavorite);
                 adapter.notifyDataSetChanged();
                 return true;
@@ -192,7 +193,7 @@ public class MapActivity extends RoboActivity {
                     busStop.setFavorite(isFavorite);
                     adapter.add(busStop);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                    WeatherBusMap.WeatherBusMarker marker = googleMap.addMarker(new MarkerOptions()
+                    WeatherBusMarker marker = googleMap.addMarker(new MarkerOptions()
                             .position(stopPosition)
                             .title(busStop.getResponse().getName()));
                     marker.setFavorite(isFavorite);

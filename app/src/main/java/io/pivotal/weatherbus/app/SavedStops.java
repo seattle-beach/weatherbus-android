@@ -38,7 +38,7 @@ public class SavedStops {
 
         Editor editor = settings.edit();
         editor.putString("saved_stops", result);
-        editor.commit();
+        editor.apply();
     }
 
     public void deleteSavedStop(String stop) {
@@ -55,6 +55,6 @@ public class SavedStops {
 
         Editor editor = settings.edit();
         editor.putString("saved_stops", result);
-        editor.commit();
+        editor.apply();
     }
 }

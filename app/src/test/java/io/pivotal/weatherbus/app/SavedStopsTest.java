@@ -55,7 +55,7 @@ public class SavedStopsTest {
         subject.addSavedStop("1_589");
 
         verify(editor,times(1)).putString("saved_stops","1_589");
-        verify(editor,times(1)).commit();
+        verify(editor,times(1)).apply();
     }
 
     @Test
@@ -65,7 +65,7 @@ public class SavedStopsTest {
         subject.addSavedStop("1_589");
 
         verify(editor,times(1)).putString("saved_stops","1_123,1_456,1_789,1_589");
-        verify(editor,times(1)).commit();
+        verify(editor,times(1)).apply();
     }
 
     @Test
@@ -73,7 +73,7 @@ public class SavedStopsTest {
         when(settings.getString("saved_stops","")).thenReturn("1_123,1_456,1_789");
         subject.deleteSavedStop("1_456");
         verify(editor,times(1)).putString("saved_stops","1_123,1_789");
-        verify(editor,times(1)).commit();
+        verify(editor,times(1)).apply();
     }
 
     @Test
@@ -81,6 +81,6 @@ public class SavedStopsTest {
         when(settings.getString("saved_stops","")).thenReturn("1_123,1_456,1_789");
         subject.deleteSavedStop("1_589");
         verify(editor,times(1)).putString("saved_stops","1_123,1_456,1_789");
-        verify(editor,times(1)).commit();
+        verify(editor,times(1)).apply();
     }
 }

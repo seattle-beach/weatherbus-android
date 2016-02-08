@@ -7,16 +7,12 @@ import android.widget.Adapter;
 import android.widget.HeaderViewListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
-import io.pivotal.weatherbus.app.BuildConfig;
-import io.pivotal.weatherbus.app.R;
-import io.pivotal.weatherbus.app.SavedStops;
-import io.pivotal.weatherbus.app.WeatherBusMap;
+import io.pivotal.weatherbus.app.*;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
@@ -26,8 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 import rx.subjects.PublishSubject;
@@ -56,7 +50,7 @@ public class MapActivityTest {
     WeatherBusMap googleMap;
 
     @Mock
-    WeatherBusMap.WeatherBusMarker marker;
+    WeatherBusMarker marker;
 
     MapActivity subject;
 
@@ -64,8 +58,6 @@ public class MapActivityTest {
     PublishSubject<WeatherBusMap> mapEmitter;
 
     StopForLocationResponse response;
-
-    GoogleMap.OnMarkerClickListener onMarkerClickListener;
 
     @Before
     public void setUp() throws Exception {
@@ -205,19 +197,6 @@ public class MapActivityTest {
         assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 0");
         assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
 
-    }
-
-    @Test
-    public void onMarkerClick_theListViewShouldScrollToTheStop() {
-        fulfillRequests();
-        when(googleMap.setOnMarkerClickListener(any(GoogleMap.OnMarkerClickListener.class)))
-                .then(new Answer<Void>() {
-                    @Override
-                    public Void answer(InvocationOnMock invocation) throws Throwable {
-                        onMarkerClickListener = (GoogleMap.OnMarkerClickListener) invocation.getArguments()[0];
-                        return null;
-                    }
-                });
     }
 
     private void fulfillRequests() {
