@@ -43,8 +43,6 @@ public class MapActivity extends RoboActivity {
     @InjectView(R.id.progressBar) ProgressBar progressBar;
     BusStopAdapter adapter;
 
-    TextView currentLocationHeader;
-
     Map<BusStop, String> markerIds;
 
     @Inject
@@ -65,9 +63,6 @@ public class MapActivity extends RoboActivity {
 
         markerIds = new HashMap<BusStop, String>();
 
-        LayoutInflater inflater = getLayoutInflater();
-        currentLocationHeader = (TextView) inflater.inflate(R.layout.current_location, stopList, false);
-        stopList.addHeaderView(currentLocationHeader);
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         adapter.clear();
         stopList.setAdapter(adapter);
@@ -76,7 +71,7 @@ public class MapActivity extends RoboActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 Intent intent = new Intent(MapActivity.this, BusStopActivity.class);
-                BusStop busStop = adapter.getItem(position - 1);
+                BusStop busStop = adapter.getItem(position);
                 intent.putExtra("stopId", busStop.getResponse().getId());
                 intent.putExtra("stopName", busStop.getResponse().getName());
                 startActivity(intent);
@@ -87,7 +82,7 @@ public class MapActivity extends RoboActivity {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 
-                BusStop busStop = adapter.getItem(position - 1);
+                BusStop busStop = adapter.getItem(position);
                 String stopId = busStop.getResponse().getId();
 
                 boolean isFavorite = busStop.isFavorite();
@@ -160,8 +155,6 @@ public class MapActivity extends RoboActivity {
             googleMap.setMyLocationEnabled(true);
 
             LatLngBounds bounds = googleMap.getLatLngBounds();
-            String text = String.format(Locale.getDefault(), "(%.1f, %.1f)", bounds.getCenter().latitude, bounds.getCenter().longitude);
-            currentLocationHeader.setText(text);
 
             LatLng center = bounds.getCenter();
             double left = bounds.northeast.latitude - bounds.southwest.latitude;

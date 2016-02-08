@@ -96,26 +96,17 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onNextGoogleMap_shouldSetListHeaderToLocation() {
-        mapEmitter.onNext(googleMap);
-
-        TextView header = (TextView)subject.findViewById(R.id.currentLocation);
-        assertThat(header).isNotNull();
-        assertThat(header.getText().toString()).isEqualTo("(5.0, 5.0)");
-    }
-
-    @Test
     public void onNextListStops_shouldShowNearbyStops() {
         fulfillRequests();
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(lv).populateItems();
-        Adapter adapter = ((HeaderViewListAdapter)lv.getAdapter()).getWrappedAdapter();
+        Adapter adapter = lv.getAdapter();
         assertThat(adapter.getCount()).isEqualTo(2);
 
-        String stopResponse = ((TextView) (lv.getChildAt(1))).getText().toString();
+        String stopResponse = ((TextView) (lv.getChildAt(0))).getText().toString();
         assertThat(stopResponse).isEqualTo("STOP 0: (4.2, 4.3)");
-        stopResponse = ((TextView) (lv.getChildAt(2))).getText().toString();
+        stopResponse = ((TextView) (lv.getChildAt(1))).getText().toString();
         assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
 
         verify(googleMap, times(2)).addMarker(any(MarkerOptions.class));
@@ -138,7 +129,7 @@ public class MapActivityTest {
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(lv).populateItems();
-        String firstStop = ((TextView) (lv.getChildAt(1))).getText().toString();
+        String firstStop = ((TextView) (lv.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
         verify(googleMap,times(2)).addMarker(any(MarkerOptions.class));
         verify(marker,times(1)).setFavorite(false);
@@ -150,14 +141,14 @@ public class MapActivityTest {
         fulfillRequests();
         ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
-        Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
+        Adapter adapter = stopList.getAdapter();
 
         assertThat(stopList.getOnItemLongClickListener().
-                onItemLongClick(stopList,stopList.getChildAt(1),1,adapter.getItemId(0))).isEqualTo(true);
+                onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
 
         String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
         verify(savedStops,times(1)).addSavedStop(busStopId);
-        String firstStop = ((TextView) (stopList.getChildAt(1))).getText().toString();
+        String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
         verify(marker,times(1)).setFavorite(true);
     }
@@ -173,14 +164,14 @@ public class MapActivityTest {
         fulfillRequests();
         ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
-        Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
+        Adapter adapter = stopList.getAdapter();
 
         assertThat(stopList.getOnItemLongClickListener().
-                onItemLongClick(stopList,stopList.getChildAt(1),1,adapter.getItemId(0))).isEqualTo(true);
+                onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
 
         String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
         verify(savedStops,times(1)).deleteSavedStop(busStopId);
-        String firstStop = ((TextView) (stopList.getChildAt(1))).getText().toString();
+        String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
         verify(marker,times(1)).setFavorite(false);
     }
@@ -190,8 +181,8 @@ public class MapActivityTest {
         fulfillRequests();
         ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
-        Adapter adapter = ((HeaderViewListAdapter)stopList.getAdapter()).getWrappedAdapter();
-        stopList.performItemClick(stopList.getChildAt(1), 1, adapter.getItemId(0));
+        Adapter adapter = stopList.getAdapter();
+        stopList.performItemClick(stopList.getChildAt(0), 0, adapter.getItemId(0));
         Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
         assertThat(intent.getStringExtra("stopId")).isEqualTo("1_1234");
         assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 0");
