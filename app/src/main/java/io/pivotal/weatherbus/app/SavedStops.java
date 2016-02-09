@@ -51,10 +51,13 @@ public class SavedStops {
             }
             result += savedStop + ",";
         }
-        result = result.substring(0,result.length()-1);
-
         Editor editor = settings.edit();
-        editor.putString("saved_stops", result);
+        if (result.isEmpty()) {
+            editor.putString("saved_stops","");
+        } else {
+            result = result.substring(0,result.length()-1);
+            editor.putString("saved_stops", result);
+        }
         editor.apply();
     }
 }

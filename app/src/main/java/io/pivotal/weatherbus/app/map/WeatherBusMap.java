@@ -19,8 +19,9 @@ public class WeatherBusMap {
         this.markers = new HashMap<String, WeatherBusMarker>();
     }
 
-    public void moveCamera(LatLng latLng) {
+    public Void moveCamera(LatLng latLng) {
         map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        return null;
     }
 
     public LatLngBounds getLatLngBounds() {

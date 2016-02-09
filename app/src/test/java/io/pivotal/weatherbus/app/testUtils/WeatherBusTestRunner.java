@@ -40,11 +40,6 @@ public class WeatherBusTestRunner extends RobolectricGradleTestRunner {
                 public Scheduler getNewThreadScheduler() {
                     return Schedulers.immediate();
                 }
-
-                @Override
-                public Scheduler getComputationScheduler() {
-                    return Schedulers.immediate();
-                }
             });
             MockitoAnnotations.initMocks(test);
         }

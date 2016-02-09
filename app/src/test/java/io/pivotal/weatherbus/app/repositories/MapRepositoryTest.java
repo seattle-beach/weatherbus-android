@@ -7,6 +7,7 @@ import io.pivotal.weatherbus.app.activities.MapActivity;
 import io.pivotal.weatherbus.app.map.*;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -53,10 +54,6 @@ public class MapRepositoryTest {
     @Before
     public void setup() {
         subject = new MapRepository(locationRepository);
-        RxJavaTestPlugins.resetPlugins();
-        RxJavaPlugins.getInstance().registerSchedulersHook(new RxJavaSchedulersHook() {
-
-        });
         fragmentAdapter = new StubMapFragmentAdapter();
     }
 
@@ -66,20 +63,6 @@ public class MapRepositoryTest {
         subject.getOnMapReadyObservable(fragmentAdapter).subscribe(subscriber);
         subscriber.assertNoErrors();
         subscriber.assertReceivedOnNext(Arrays.asList(weatherbusMap));
-    }
-
-    @Test
-    public void getOnCenteredMap_shouldCenterMap_ifNextLocationIsSent() {
-        Observable<Location> locationObservable = Observable.just(location).subscribeOn(Schedulers.immediate());
-        when(locationRepository.fetch(mapActivity)).thenReturn(locationObservable);
-        when(location.getLatitude()).thenReturn(5.0);
-        when(location.getLongitude()).thenReturn(4.0);
-
-        TestSubscriber<WeatherBusMap> subscriber = new TestSubscriber<WeatherBusMap>();
-        subject.getOnCenteredMapObservable(fragmentAdapter, locationObservable).subscribe(subscriber);
-        subscriber.assertNoErrors();
-        subscriber.assertReceivedOnNext(Arrays.asList(weatherbusMap));
-        verify(weatherbusMap).moveCamera(new LatLng(5.0, 4.0));
     }
 
     @Test

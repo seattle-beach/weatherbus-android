@@ -25,28 +25,27 @@ public class MapRepository {
         return behaviorSubject;
     }
 
-    public Observable<WeatherBusMap> getOnCenteredMapObservable(final MapFragmentAdapter mapFragment, Observable<Location> location) {
-        if(behaviorSubject == null) {
-            behaviorSubject = create(mapFragment);
-        }
-
-        return Observable.zip(behaviorSubject, location, new Func2<WeatherBusMap, Location, WeatherBusMap>() {
-            @Override
-            public WeatherBusMap call(WeatherBusMap googleMap, Location location) {
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-//                ListView stops = (ListView) activity.findViewById(R.id.stopList);
-//                googleMap.setPadding(0, 0 ,0, stops.getTop());
-                googleMap.moveCamera(latLng);
-                return googleMap;
-            }
-        });
-    }
-
     public Observable<WeatherBusMarker> getOnMarkerClickObservable(final MapFragmentAdapter mapFragment) {
         if(behaviorSubject == null) {
             behaviorSubject = create(mapFragment);
         }
-        return behaviorSubject.flatMap(new MarkerClickFlatMap());
+        return behaviorSubject.flatMap(new Func1<WeatherBusMap, Observable<WeatherBusMarker>>() {
+            @Override
+            public Observable<WeatherBusMarker> call(final WeatherBusMap weatherBusMap) {
+                return Observable.create(new Observable.OnSubscribe<WeatherBusMarker>() {
+                    @Override
+                    public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
+                        weatherBusMap.setOnMarkerClickListener(new OnWeatherBusMarkerClick() {
+                            @Override
+                            public boolean onMarkerClick(WeatherBusMarker marker) {
+                                subscriber.onNext(marker);
+                                return false;
+                            }
+                        });
+                    }
+                });
+            }
+        });
     }
 
     private BehaviorSubject<WeatherBusMap> create(final MapFragmentAdapter mapFragment) {
@@ -63,23 +62,5 @@ public class MapRepository {
             }
         }).subscribe(subject);
         return subject;
-    }
-
-    private class MarkerClickFlatMap implements Func1<WeatherBusMap, Observable<WeatherBusMarker>> {
-        @Override
-        public Observable<WeatherBusMarker> call(final WeatherBusMap weatherBusMap) {
-            return Observable.create(new Observable.OnSubscribe<WeatherBusMarker>() {
-                @Override
-                public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
-                    weatherBusMap.setOnMarkerClickListener(new OnWeatherBusMarkerClick() {
-                        @Override
-                        public boolean onMarkerClick(WeatherBusMarker marker) {
-                            subscriber.onNext(marker);
-                            return false;
-                        }
-                    });
-                }
-            });
-        }
     }
 }

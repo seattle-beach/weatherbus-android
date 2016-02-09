@@ -72,8 +72,16 @@ public class SavedStopsTest {
     public void whenDeletingAnExistingStop_itShouldDeleteFromSettings() {
         when(settings.getString("saved_stops","")).thenReturn("1_123,1_456,1_789");
         subject.deleteSavedStop("1_456");
-        verify(editor,times(1)).putString("saved_stops","1_123,1_789");
-        verify(editor,times(1)).apply();
+        verify(editor).putString("saved_stops","1_123,1_789");
+        verify(editor).apply();
+    }
+
+    @Test
+    public void whenDeletingLastSavedStop_itShouldCommitEmptyString() {
+        when(settings.getString("saved_stops","")).thenReturn("1_456");
+        subject.deleteSavedStop("1_456");
+        verify(editor).putString("saved_stops","");
+        verify(editor).apply();
     }
 
     @Test

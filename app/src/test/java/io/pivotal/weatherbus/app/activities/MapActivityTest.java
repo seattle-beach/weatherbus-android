@@ -25,6 +25,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 import rx.Observable;
@@ -77,8 +79,7 @@ public class MapActivityTest {
         locationEmitter = BehaviorSubject.create();
         stopEmitter = PublishSubject.create();
 
-        LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
-        when(googleMap.getLatLngBounds()).thenReturn(bounds);
+        when(googleMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
         when(googleMap.addMarker(any(MarkerOptions.class))).thenReturn(marker);
         when(googleMap.getMarker(any(String.class))).thenReturn(marker);
         when(location.getLatitude()).thenReturn(5.0);
@@ -87,6 +88,17 @@ public class MapActivityTest {
         when(locationRepository.fetch(any(MapActivity.class))).thenReturn(locationEmitter);
         when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
         when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
+
+        when(googleMap.moveCamera(any(LatLng.class))).thenAnswer(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
+                LatLng newCenter = (LatLng) invocationOnMock.getArguments()[0];
+                LatLngBounds newBounds = new LatLngBounds(new LatLng(newCenter.latitude - 1, newCenter.longitude - 1),
+                        new LatLng(newCenter.latitude + 1, newCenter.longitude + 1));
+                when(googleMap.getLatLngBounds()).thenReturn(newBounds);
+                return null;
+            }
+        });
 
         subject = Robolectric.setupActivity(MapActivity.class);
 
@@ -107,24 +119,32 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onNextMap_shouldGetNearbyStops_usingCurrentLocation() {
-        locationEmitter.onNext(location);
-        mapEmitter.onNext(googleMap);
-
-        verify(service,times(1)).getStopsForLocation(5.0, 5.0, 2.0, 2.0);
-    }
-
-    @Test
     public void onCreate_shouldShowProgressBar() {
         assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.VISIBLE);
     }
 
     @Test
-    public void onNextListStops_shouldShowNearbyStops() {
+    public void onNextMap_shouldOffsetBottomOfMap_toTopOfListView() {
+        ListView lv = (ListView)subject.findViewById(R.id.stopList);
+        shadowOf(lv).populateItems();
+        lv.setTop(40);
+        mapEmitter.onNext(googleMap);
+        verify(googleMap).setPadding(0, 0 , 0 , 40);
+    }
+
+    @Test
+    public void onNextMapAndLocation_shouldCenterMapAndEnableLocation() {
         mapEmitter.onNext(googleMap);
         locationEmitter.onNext(location);
-        stopEmitter.onNext(response);
-        stopEmitter.onCompleted();
+        locationEmitter.onCompleted();
+        verify(googleMap).setMyLocationEnabled(true);
+        verify(googleMap).moveCamera(new LatLng(5.0,5.0));
+        verify(service).getStopsForLocation(5.0, 5.0, 2.0, 2.0);
+    }
+
+    @Test
+    public void onNextMapAndLocationAndStops_shouldShowNearbyStops() {
+        fulfillRequests();
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(lv).populateItems();

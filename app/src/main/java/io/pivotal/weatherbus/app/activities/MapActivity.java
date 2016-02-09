@@ -27,11 +27,9 @@ import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
 import roboguice.inject.InjectView;
 import rx.Observable;
-import rx.Scheduler;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
@@ -62,7 +60,7 @@ public class MapActivity extends RoboActivity {
     @Inject
     LocationRepository locationRepository;
 
-    WeatherBusMap weatherBusMap;
+    private WeatherBusMap weatherBusMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +72,7 @@ public class MapActivity extends RoboActivity {
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         adapter.clear();
         stopList.setAdapter(adapter);
+        stopList.setEmptyView(findViewById(R.id.currentLocation));
 
         stopList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -125,14 +124,25 @@ public class MapActivity extends RoboActivity {
                 .subscribe(new Action1<WeatherBusMap>() {
                     @Override
                     public void call(WeatherBusMap weatherBusMap) {
-                        ListView stops = (ListView) MapActivity.this.findViewById(R.id.stopList);
-                        weatherBusMap.setPadding(0, 0 ,0, stops.getTop());
+                        weatherBusMap.setPadding(0, 0 ,0, stopList.getTop());
                         locationObservable
                                 .subscribeOn(Schedulers.newThread())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new GoogleMapSubscriber());
+                                .subscribe(new LocationSubscriber());
                     }
         }));
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.v("Hi","Hi");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.v("Hi","Hi");
     }
 
     @Override
@@ -163,7 +173,7 @@ public class MapActivity extends RoboActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class GoogleMapSubscriber extends Subscriber<Location> {
+    private class LocationSubscriber extends Subscriber<Location> {
 
         @Override
         public void onCompleted() {
@@ -215,7 +225,7 @@ public class MapActivity extends RoboActivity {
                     BusStop busStop = new BusStop(stopResponse);
                     boolean isFavorite = favoriteStops.contains(stopResponse.getId());
                     busStop.setFavorite(isFavorite);
-                    adapter.add(busStop);
+                    //adapter.add(busStop);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
                     WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
                             .position(stopPosition)
@@ -223,8 +233,8 @@ public class MapActivity extends RoboActivity {
                     marker.setFavorite(isFavorite);
                     markerIds.put(busStop,marker);
                 }
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);
-                stopList.setLayoutParams(params);
+                //LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);
+                //stopList.setLayoutParams(params);
                 progressBar.setVisibility(View.GONE);
             }
         }
