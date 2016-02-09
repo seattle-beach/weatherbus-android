@@ -1,9 +1,10 @@
-package io.pivotal.weatherbus.app;
+package io.pivotal.weatherbus.app.map;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.HashMap;
@@ -42,5 +43,15 @@ public class WeatherBusMap {
 
     public void setPadding(int left, int top, int right, int bottom) {
         map.setPadding(left,top,right,bottom);
+    }
+
+    public Void setOnMarkerClickListener(final OnWeatherBusMarkerClick listener) {
+        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                return listener.onMarkerClick(markers.get(marker.getId()));
+            }
+        });
+        return null;
     }
 }

@@ -2,9 +2,9 @@ package io.pivotal.weatherbus.app.activities;
 
 import android.content.ComponentName;
 import android.content.Intent;
+import android.location.Location;
 import android.view.View;
 import android.widget.Adapter;
-import android.widget.HeaderViewListAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import com.google.android.gms.maps.MapFragment;
@@ -13,7 +13,12 @@ import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.*;
+import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
+import io.pivotal.weatherbus.app.map.OnWeatherBusMapReadyCallback;
+import io.pivotal.weatherbus.app.map.WeatherBusMap;
+import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
+import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
@@ -44,6 +49,9 @@ public class MapActivityTest {
     MapRepository mapRepository;
 
     @Inject
+    LocationRepository locationRepository;
+
+    @Inject
     SavedStops savedStops;
 
     @Mock
@@ -52,17 +60,29 @@ public class MapActivityTest {
     @Mock
     WeatherBusMarker marker;
 
+    @Mock
+    Location location;
+
     MapActivity subject;
 
     PublishSubject<StopForLocationResponse> stopEmitter;
+    PublishSubject<Location> locationEmitter;
     PublishSubject<WeatherBusMap> mapEmitter;
+    PublishSubject<WeatherBusMap> centeredMapEmitter;
 
     StopForLocationResponse response;
 
     @Before
     public void setUp() throws Exception {
         mapEmitter = PublishSubject.create();
-        when(mapRepository.create(any(MapFragment.class), any(MapActivity.class))).thenReturn(mapEmitter);
+        locationEmitter = PublishSubject.create();
+        centeredMapEmitter = PublishSubject.create();
+        when(location.getLatitude()).thenReturn(5.0);
+        when(location.getLongitude()).thenReturn(5.0);
+        when(locationRepository.create(any(MapActivity.class))).thenReturn(locationEmitter);
+        when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
+        when(mapRepository.getOnCenteredMapObservable(any(MapFragmentAdapter.class), eq(locationEmitter))).thenReturn(centeredMapEmitter);
+
 
         stopEmitter = PublishSubject.create();
 
@@ -70,7 +90,7 @@ public class MapActivityTest {
 
         LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
         when(googleMap.getLatLngBounds()).thenReturn(bounds);
-        when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
+        when(service.getStopsForLocation(4.0, 6.0, 2.0, 2.0)).thenReturn(stopEmitter);
         when(googleMap.addMarker(any(MarkerOptions.class))).thenReturn(marker);
         when(googleMap.getMarker(any(String.class))).thenReturn(marker);
 
@@ -91,13 +111,29 @@ public class MapActivityTest {
     }
 
     @Test
+    public void shouldCenterMap() {
+
+    }
+
+    @Test
+    public void onNextMap_shouldGetNearbyStops_usingCurrentLocation() {
+        mapEmitter.onNext(googleMap);
+        locationEmitter.onNext(location);
+        centeredMapEmitter.onNext(googleMap);
+
+        verify(service,times(1)).getStopsForLocation(5.0, 5.0, 2.0, 2.0);
+    }
+
+    @Test
     public void onCreate_shouldShowProgressBar() {
         assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.VISIBLE);
     }
 
     @Test
     public void onNextListStops_shouldShowNearbyStops() {
-        fulfillRequests();
+        centeredMapEmitter.onNext(googleMap);
+        stopEmitter.onNext(response);
+        stopEmitter.onCompleted();
 
         ListView lv = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(lv).populateItems();
@@ -192,6 +228,8 @@ public class MapActivityTest {
 
     private void fulfillRequests() {
         mapEmitter.onNext(googleMap);
+        locationEmitter.onNext(location);
+        centeredMapEmitter.onNext(googleMap);
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
     }

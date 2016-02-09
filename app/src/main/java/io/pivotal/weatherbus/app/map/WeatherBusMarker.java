@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app;
+package io.pivotal.weatherbus.app.map;
 
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Marker;

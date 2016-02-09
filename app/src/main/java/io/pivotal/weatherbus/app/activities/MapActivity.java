@@ -1,8 +1,8 @@
 package io.pivotal.weatherbus.app.activities;
 
 import android.content.Intent;
+import android.location.Location;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,8 +14,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
-import io.pivotal.weatherbus.app.WeatherBusMap;
-import io.pivotal.weatherbus.app.WeatherBusMarker;
+import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
+import io.pivotal.weatherbus.app.map.WeatherBusMap;
+import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.model.BusStopAdapter;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
@@ -26,13 +27,13 @@ import roboguice.inject.InjectView;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class MapActivity extends RoboActivity {
@@ -43,7 +44,7 @@ public class MapActivity extends RoboActivity {
     @InjectView(R.id.progressBar) ProgressBar progressBar;
     BusStopAdapter adapter;
 
-    Map<BusStop, String> markerIds;
+    Map<BusStop, WeatherBusMarker> markerIds;
 
     @Inject
     WeatherBusService service;
@@ -54,14 +55,12 @@ public class MapActivity extends RoboActivity {
     @Inject
     MapRepository mapRepository;
 
-    WeatherBusMap googleMap;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
 
-        markerIds = new HashMap<BusStop, String>();
+        markerIds = new HashMap<BusStop, WeatherBusMarker>();
 
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         adapter.clear();
@@ -92,8 +91,7 @@ public class MapActivity extends RoboActivity {
                     savedStops.addSavedStop(stopId);
                 }
                 busStop.setFavorite(!isFavorite);
-                String markerId = markerIds.get(busStop);
-                WeatherBusMarker marker = googleMap.getMarker(markerId);
+                WeatherBusMarker marker = markerIds.get(busStop);
                 marker.setFavorite(!isFavorite);
                 adapter.notifyDataSetChanged();
                 return true;
@@ -102,7 +100,26 @@ public class MapActivity extends RoboActivity {
 
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
 
-        Observable<WeatherBusMap> googleMap = mapRepository.create(mapFragment, this);
+        Observable<WeatherBusMap> googleMap = mapRepository.getOnMapReadyObservable(new MapFragmentAdapter(mapFragment));
+//
+//        googleMap.subscribe(new Subscriber<WeatherBusMap>() {
+//            @Override
+//            public void onCompleted() {
+//
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//
+//            }
+//
+//            @Override
+//            public void onNext(WeatherBusMap weatherBusMap) {
+//                //Actions on map that do not require its location
+//            }
+//        });
+
+        Observable<WeatherBusMap> centeredMap = mapRepository.getOnCenteredMapObservable();
 
         subscriptions.add(googleMap
                 .observeOn(AndroidSchedulers.mainThread())
@@ -139,6 +156,9 @@ public class MapActivity extends RoboActivity {
     }
 
     private class GoogleMapSubscriber extends Subscriber<WeatherBusMap> {
+
+        WeatherBusMap googleMap;
+
         @Override
         public void onCompleted() {
 
@@ -151,7 +171,7 @@ public class MapActivity extends RoboActivity {
 
         @Override
         public void onNext(WeatherBusMap googleMap) {
-            MapActivity.this.googleMap = googleMap;
+            this.googleMap = googleMap;
             googleMap.setMyLocationEnabled(true);
 
             LatLngBounds bounds = googleMap.getLatLngBounds();
@@ -190,7 +210,7 @@ public class MapActivity extends RoboActivity {
                             .position(stopPosition)
                             .title(busStop.getResponse().getName()));
                     marker.setFavorite(isFavorite);
-                    markerIds.put(busStop,marker.getId());
+                    markerIds.put(busStop,marker);
                 }
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);
                 stopList.setLayoutParams(params);
