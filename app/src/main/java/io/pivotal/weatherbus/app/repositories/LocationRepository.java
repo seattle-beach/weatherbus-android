@@ -13,38 +13,48 @@ import rx.Observable.OnSubscribe;
 import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action0;
+import rx.subjects.BehaviorSubject;
 import rx.subscriptions.Subscriptions;
 
 public class LocationRepository {
-    public Observable<Location> create(final Context context) {
-        Observable<Location> location = Observable.create(new OnSubscribe<Location>() {
-            @Override
-            public void call(Subscriber<? super Location> subscriber) {
-                ApiClientConnectionCallbacks callbacks = new ApiClientConnectionCallbacks(subscriber);
-                final GoogleApiClient client = new GoogleApiClient.Builder(context)
-                        .addApi(LocationServices.API)
-                        .addConnectionCallbacks(callbacks)
-                        .addOnConnectionFailedListener(callbacks)
-                        .build();
-                callbacks.setClient(client);
+    BehaviorSubject<Location> subject;
+    public Observable<Location> fetch(final Context context) {
+        if (subject == null) {
+            subject = create(context);
+        }
+        return subject;
+    }
 
-                try {
-                    client.connect();
-                } catch(Throwable e) {
-                    subscriber.onError(e);
-                }
+    private BehaviorSubject<Location> create(final Context context) {
+        subject = BehaviorSubject.create();
+        Observable.create(new OnSubscribe<Location>() {
+                @Override
+                public void call(Subscriber<? super Location> subscriber) {
+                    ApiClientConnectionCallbacks callbacks = new ApiClientConnectionCallbacks(subscriber);
+                    final GoogleApiClient client = new GoogleApiClient.Builder(context)
+                            .addApi(LocationServices.API)
+                            .addConnectionCallbacks(callbacks)
+                            .addOnConnectionFailedListener(callbacks)
+                            .build();
+                    callbacks.setClient(client);
 
-                subscriber.add(Subscriptions.create(new Action0() {
-                    @Override
-                    public void call() {
-                        if(client.isConnected() || client.isConnecting()) {
-                            client.disconnect();
-                        }
+                    try {
+                        client.connect();
+                    } catch(Throwable e) {
+                        subscriber.onError(e);
                     }
-                }));
-            }
-        });
-        return location;
+
+                    subscriber.add(Subscriptions.create(new Action0() {
+                        @Override
+                        public void call() {
+                            if(client.isConnected() || client.isConnecting()) {
+                                client.disconnect();
+                            }
+                        }
+                    }));
+                }
+            }).subscribe(subject);
+        return subject;
     }
 
     private class ApiClientConnectionCallbacks implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {

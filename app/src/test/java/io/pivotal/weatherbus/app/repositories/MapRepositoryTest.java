@@ -1,7 +1,5 @@
 package io.pivotal.weatherbus.app.repositories;
 
-import android.app.Activity;
-import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.BuildConfig;
@@ -73,7 +71,7 @@ public class MapRepositoryTest {
     @Test
     public void getOnCenteredMap_shouldCenterMap_ifNextLocationIsSent() {
         Observable<Location> locationObservable = Observable.just(location).subscribeOn(Schedulers.immediate());
-        when(locationRepository.create(mapActivity)).thenReturn(locationObservable);
+        when(locationRepository.fetch(mapActivity)).thenReturn(locationObservable);
         when(location.getLatitude()).thenReturn(5.0);
         when(location.getLongitude()).thenReturn(4.0);
 

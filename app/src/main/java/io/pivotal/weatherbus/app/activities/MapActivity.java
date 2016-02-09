@@ -3,6 +3,7 @@ package io.pivotal.weatherbus.app.activities;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -19,15 +20,18 @@ import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.model.BusStopAdapter;
+import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
 import roboguice.inject.InjectView;
 import rx.Observable;
+import rx.Scheduler;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
@@ -54,6 +58,11 @@ public class MapActivity extends RoboActivity {
 
     @Inject
     MapRepository mapRepository;
+
+    @Inject
+    LocationRepository locationRepository;
+
+    WeatherBusMap weatherBusMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,31 +109,30 @@ public class MapActivity extends RoboActivity {
 
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
 
-        Observable<WeatherBusMap> googleMap = mapRepository.getOnMapReadyObservable(new MapFragmentAdapter(mapFragment));
-//
-//        googleMap.subscribe(new Subscriber<WeatherBusMap>() {
-//            @Override
-//            public void onCompleted() {
-//
-//            }
-//
-//            @Override
-//            public void onError(Throwable e) {
-//
-//            }
-//
-//            @Override
-//            public void onNext(WeatherBusMap weatherBusMap) {
-//                //Actions on map that do not require its location
-//            }
-//        });
+        final Observable<Location> locationObservable = locationRepository.fetch(this);
 
-        Observable<WeatherBusMap> centeredMap = mapRepository.getOnCenteredMapObservable();
+        final Observable<WeatherBusMap> weatherBusMapObservable = mapRepository.getOnMapReadyObservable(new MapFragmentAdapter(mapFragment));
 
-        subscriptions.add(googleMap
+        subscriptions.add(weatherBusMapObservable
+                .doOnNext(new Action1<WeatherBusMap>() {
+                    @Override
+                    public void call(WeatherBusMap weatherBusMap) {
+                        MapActivity.this.weatherBusMap = weatherBusMap;
+                    }
+                })
+                .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(new GoogleMapSubscriber()));
+                .subscribe(new Action1<WeatherBusMap>() {
+                    @Override
+                    public void call(WeatherBusMap weatherBusMap) {
+                        ListView stops = (ListView) MapActivity.this.findViewById(R.id.stopList);
+                        weatherBusMap.setPadding(0, 0 ,0, stops.getTop());
+                        locationObservable
+                                .subscribeOn(Schedulers.newThread())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(new GoogleMapSubscriber());
+                    }
+        }));
     }
 
     @Override
@@ -155,9 +163,7 @@ public class MapActivity extends RoboActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class GoogleMapSubscriber extends Subscriber<WeatherBusMap> {
-
-        WeatherBusMap googleMap;
+    private class GoogleMapSubscriber extends Subscriber<Location> {
 
         @Override
         public void onCompleted() {
@@ -170,17 +176,22 @@ public class MapActivity extends RoboActivity {
         }
 
         @Override
-        public void onNext(WeatherBusMap googleMap) {
-            this.googleMap = googleMap;
-            googleMap.setMyLocationEnabled(true);
+        public void onNext(Location location) {
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            weatherBusMap.moveCamera(latLng);
+            weatherBusMap.setMyLocationEnabled(true);
 
-            LatLngBounds bounds = googleMap.getLatLngBounds();
+            LatLngBounds bounds = weatherBusMap.getLatLngBounds();
 
             LatLng center = bounds.getCenter();
             double left = bounds.northeast.latitude - bounds.southwest.latitude;
             double right = bounds.northeast.longitude - bounds.southwest.longitude;
-            service.getStopsForLocation(center.latitude, center.longitude, left, right)
-                    .observeOn(AndroidSchedulers.mainThread())
+            Observable<StopForLocationResponse> response = service.getStopsForLocation(
+                    center.latitude,
+                    center.longitude,
+                    left,
+                    right);
+            response.observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.newThread())
                     .subscribe(new StopForLocationResponsesSubscriber());
         }
@@ -206,7 +217,7 @@ public class MapActivity extends RoboActivity {
                     busStop.setFavorite(isFavorite);
                     adapter.add(busStop);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                    WeatherBusMarker marker = googleMap.addMarker(new MarkerOptions()
+                    WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
                             .position(stopPosition)
                             .title(busStop.getResponse().getName()));
                     marker.setFavorite(isFavorite);

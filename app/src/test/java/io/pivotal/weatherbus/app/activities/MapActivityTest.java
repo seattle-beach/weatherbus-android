@@ -7,14 +7,12 @@ import android.view.View;
 import android.widget.Adapter;
 import android.widget.ListView;
 import android.widget.TextView;
-import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.*;
 import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
-import io.pivotal.weatherbus.app.map.OnWeatherBusMapReadyCallback;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
@@ -29,6 +27,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
+import rx.Observable;
+import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 
 import java.util.ArrayList;
@@ -66,33 +66,29 @@ public class MapActivityTest {
     MapActivity subject;
 
     PublishSubject<StopForLocationResponse> stopEmitter;
-    PublishSubject<Location> locationEmitter;
-    PublishSubject<WeatherBusMap> mapEmitter;
-    PublishSubject<WeatherBusMap> centeredMapEmitter;
+    BehaviorSubject<Location> locationEmitter;
+    BehaviorSubject<WeatherBusMap> mapEmitter;
 
     StopForLocationResponse response;
 
     @Before
     public void setUp() throws Exception {
-        mapEmitter = PublishSubject.create();
-        locationEmitter = PublishSubject.create();
-        centeredMapEmitter = PublishSubject.create();
-        when(location.getLatitude()).thenReturn(5.0);
-        when(location.getLongitude()).thenReturn(5.0);
-        when(locationRepository.create(any(MapActivity.class))).thenReturn(locationEmitter);
-        when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
-        when(mapRepository.getOnCenteredMapObservable(any(MapFragmentAdapter.class), eq(locationEmitter))).thenReturn(centeredMapEmitter);
-
-
+        mapEmitter = BehaviorSubject.create();
+        locationEmitter = BehaviorSubject.create();
         stopEmitter = PublishSubject.create();
-
-        subject = Robolectric.setupActivity(MapActivity.class);
 
         LatLngBounds bounds = new LatLngBounds(new LatLng(4,4), new LatLng(6,6));
         when(googleMap.getLatLngBounds()).thenReturn(bounds);
-        when(service.getStopsForLocation(4.0, 6.0, 2.0, 2.0)).thenReturn(stopEmitter);
         when(googleMap.addMarker(any(MarkerOptions.class))).thenReturn(marker);
         when(googleMap.getMarker(any(String.class))).thenReturn(marker);
+        when(location.getLatitude()).thenReturn(5.0);
+        when(location.getLongitude()).thenReturn(5.0);
+
+        when(locationRepository.fetch(any(MapActivity.class))).thenReturn(locationEmitter);
+        when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
+        when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
+
+        subject = Robolectric.setupActivity(MapActivity.class);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
@@ -111,15 +107,9 @@ public class MapActivityTest {
     }
 
     @Test
-    public void shouldCenterMap() {
-
-    }
-
-    @Test
     public void onNextMap_shouldGetNearbyStops_usingCurrentLocation() {
-        mapEmitter.onNext(googleMap);
         locationEmitter.onNext(location);
-        centeredMapEmitter.onNext(googleMap);
+        mapEmitter.onNext(googleMap);
 
         verify(service,times(1)).getStopsForLocation(5.0, 5.0, 2.0, 2.0);
     }
@@ -131,7 +121,8 @@ public class MapActivityTest {
 
     @Test
     public void onNextListStops_shouldShowNearbyStops() {
-        centeredMapEmitter.onNext(googleMap);
+        mapEmitter.onNext(googleMap);
+        locationEmitter.onNext(location);
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
 
@@ -229,7 +220,6 @@ public class MapActivityTest {
     private void fulfillRequests() {
         mapEmitter.onNext(googleMap);
         locationEmitter.onNext(location);
-        centeredMapEmitter.onNext(googleMap);
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
     }
