@@ -7,45 +7,47 @@
         android:gravity="center_vertical"
         android:weightSum="100">
     <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="10"
             android:layout_height="fill_parent"
             android:id="@+id/routeNumber"
-            android:layout_weight="20"
             android:gravity="center_vertical"
-            android:text="#"/>
+            android:text="150E"/>
     <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
-            android:weightSum="2"
-            android:layout_weight="40"
+            android:layout_width="0dp"
+            android:layout_weight="55"
+            android:layout_height="wrap_content"
+            android:weightSum="100"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
             android:gravity="center_vertical"
             android:orientation="vertical">
 
             <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="fill_parent"
                     android:layout_height="0dp"
+                    android:layout_weight="50"
                     android:id="@+id/name"
-                    android:layout_weight="1"
-                    android:text="Name"/>
+                    android:text="Name is very very very very very long"/>
             <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="0dp"
+                    android:layout_weight="50"
                     android:id="@+id/status"
-                    android:layout_weight="1"
                     android:text="some status"/>
     </LinearLayout>
     <TextView
             android:id="@+id/time"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="15"
             android:layout_height="fill_parent"
-            android:layout_weight="20"
             android:gravity="center_vertical"
             android:text="12:11"/>
     <TextView
             android:id="@+id/temperature"
-            android:layout_width="wrap_content"
-            android:layout_height="fill_parent"
+            android:layout_width="0dp"
             android:layout_weight="20"
+            android:layout_height="fill_parent"
             android:gravity="center_vertical"
             android:text="47.2"/>
 
