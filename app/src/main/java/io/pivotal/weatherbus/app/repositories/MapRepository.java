@@ -1,52 +1,69 @@
 package io.pivotal.weatherbus.app.repositories;
 
-import android.app.Activity;
-import android.location.Location;
-import android.widget.ListView;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
-import io.pivotal.weatherbus.app.R;
-import io.pivotal.weatherbus.app.WeatherBusMap;
+import io.pivotal.weatherbus.app.map.*;
 import rx.Observable;
 import rx.Subscriber;
-import rx.functions.Func2;
+import rx.functions.Func1;
+import rx.subjects.BehaviorSubject;
 
 public class MapRepository {
 
     LocationRepository locationRepository;
+    private BehaviorSubject<WeatherBusMap> behaviorSubject;
+    private boolean isCacheValid = false;
 
     public MapRepository(LocationRepository locationRepository) {
         this.locationRepository = locationRepository;
     }
 
-    public Observable<WeatherBusMap> create(final MapFragment fragment, final Activity activity) {
-        Observable<WeatherBusMap> googleMap = createMap(fragment);
-        Observable<Location> location = locationRepository.create(activity);
-        return Observable.zip(googleMap, location, new Func2<WeatherBusMap, Location, WeatherBusMap>() {
+    public Observable<WeatherBusMap> getOnMapReadyObservable(final MapFragmentAdapter mapFragment) {
+        if(behaviorSubject == null || !isCacheValid) {
+            behaviorSubject = create(mapFragment);
+            isCacheValid = true;
+        }
+        return behaviorSubject;
+    }
+
+    public Observable<WeatherBusMarker> getOnMarkerClickObservable(final MapFragmentAdapter mapFragment) {
+        if(behaviorSubject == null) {
+            behaviorSubject = create(mapFragment);
+        }
+        return behaviorSubject.flatMap(new Func1<WeatherBusMap, Observable<WeatherBusMarker>>() {
             @Override
-            public WeatherBusMap call(WeatherBusMap googleMap, Location location) {
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                ListView stops = (ListView) activity.findViewById(R.id.stopList);
-                googleMap.setPadding(0, 0 ,0, stops.getTop());
-                googleMap.moveCamera(latLng);
-                return googleMap;
+            public Observable<WeatherBusMarker> call(final WeatherBusMap weatherBusMap) {
+                return Observable.create(new Observable.OnSubscribe<WeatherBusMarker>() {
+                    @Override
+                    public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
+                        weatherBusMap.setOnMarkerClickListener(new OnWeatherBusMarkerClick() {
+                            @Override
+                            public boolean onMarkerClick(WeatherBusMarker marker) {
+                                subscriber.onNext(marker);
+                                return false;
+                            }
+                        });
+                    }
+                });
             }
         });
     }
 
-    public Observable<WeatherBusMap> createMap(final MapFragment mapFragment) {
-        return Observable.create(new Observable.OnSubscribe<WeatherBusMap>() {
+    public void reset() {
+        isCacheValid = false;
+    }
+
+    private BehaviorSubject<WeatherBusMap> create(final MapFragmentAdapter mapFragment) {
+        BehaviorSubject<WeatherBusMap> subject = BehaviorSubject.create();
+        Observable.create(new Observable.OnSubscribe<WeatherBusMap>() {
             @Override
             public void call(final Subscriber<? super WeatherBusMap> subscriber) {
-                OnMapReadyCallback mapReadyCallback = new OnMapReadyCallback() {
-                    public void onMapReady(GoogleMap googleMap) {
-                        subscriber.onNext(new WeatherBusMap(googleMap));
+                mapFragment.getMapAsync(new OnWeatherBusMapReadyCallback() {
+                    @Override
+                    public void onMapReady(WeatherBusMap map) {
+                        subscriber.onNext(map);
                     }
-                };
-                mapFragment.getMapAsync(mapReadyCallback);
+                });
             }
-        });
+        }).subscribe(subject);
+        return subject;
     }
 }

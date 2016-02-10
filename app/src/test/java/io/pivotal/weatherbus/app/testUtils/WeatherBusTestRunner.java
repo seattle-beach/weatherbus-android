@@ -37,17 +37,7 @@ public class WeatherBusTestRunner extends RobolectricGradleTestRunner {
             });
             RxJavaPlugins.getInstance().registerSchedulersHook(new RxJavaSchedulersHook() {
                 @Override
-                public Scheduler getIOScheduler() {
-                    return Schedulers.immediate();
-                }
-
-                @Override
                 public Scheduler getNewThreadScheduler() {
-                    return Schedulers.immediate();
-                }
-
-                @Override
-                public Scheduler getComputationScheduler() {
                     return Schedulers.immediate();
                 }
             });

@@ -1,12 +1,15 @@
 package io.pivotal.weatherbus.app.activities;
 
 import android.content.Intent;
+import android.location.Location;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -14,10 +17,12 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
-import io.pivotal.weatherbus.app.WeatherBusMap;
-import io.pivotal.weatherbus.app.WeatherBusMarker;
+import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
+import io.pivotal.weatherbus.app.map.WeatherBusMap;
+import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.model.BusStopAdapter;
+import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.MapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
@@ -26,24 +31,21 @@ import roboguice.inject.InjectView;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 public class MapActivity extends RoboActivity {
-    MapFragment mapFragment;
-    private CompositeSubscription subscriptions = Subscriptions.from();
+    MapFragmentAdapter mapFragment;
+    private CompositeSubscription subscriptions;
 
     @InjectView(R.id.stopList) ListView stopList;
     @InjectView(R.id.progressBar) ProgressBar progressBar;
-    BusStopAdapter adapter;
-
-    Map<BusStop, String> markerIds;
 
     @Inject
     WeatherBusService service;
@@ -54,17 +56,22 @@ public class MapActivity extends RoboActivity {
     @Inject
     MapRepository mapRepository;
 
-    WeatherBusMap googleMap;
+    @Inject
+    LocationRepository locationRepository;
+
+    private WeatherBusMap weatherBusMap;
+    private BusStopAdapter adapter;
+    private Map<BusStop, WeatherBusMarker> markerIds = new HashMap<BusStop, WeatherBusMarker>();
+    private Observable<Location> locationObservable;
+    private Observable<WeatherBusMap> weatherBusMapObservable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
-
-        markerIds = new HashMap<BusStop, String>();
+        subscriptions = Subscriptions.from();
 
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
-        adapter.clear();
         stopList.setAdapter(adapter);
 
         stopList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -92,27 +99,49 @@ public class MapActivity extends RoboActivity {
                     savedStops.addSavedStop(stopId);
                 }
                 busStop.setFavorite(!isFavorite);
-                String markerId = markerIds.get(busStop);
-                WeatherBusMarker marker = googleMap.getMarker(markerId);
+                WeatherBusMarker marker = markerIds.get(busStop);
                 marker.setFavorite(!isFavorite);
                 adapter.notifyDataSetChanged();
                 return true;
             }
         });
 
-        mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map);
+        mapFragment = new MapFragmentAdapter((MapFragment) getFragmentManager().findFragmentById(R.id.map));
+        weatherBusMapObservable = mapRepository.getOnMapReadyObservable(mapFragment);
+        locationObservable = locationRepository.fetch(this);
+    }
 
-        Observable<WeatherBusMap> googleMap = mapRepository.create(mapFragment, this);
-
-        subscriptions.add(googleMap
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if(!hasFocus) {
+            return;
+        }
+        subscriptions.add(weatherBusMapObservable
+                .doOnNext(new Action1<WeatherBusMap>() {
+                    @Override
+                    public void call(WeatherBusMap weatherBusMap) {
+                        MapActivity.this.weatherBusMap = weatherBusMap;
+                    }
+                })
+                .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(AndroidSchedulers.mainThread())
-                .subscribe(new GoogleMapSubscriber()));
+                .subscribe(new Action1<WeatherBusMap>() {
+                    @Override
+                    public void call(WeatherBusMap weatherBusMap) {
+                        weatherBusMap.setPadding(0, 0, 0, stopList.getTop());
+                        locationObservable
+                                .subscribeOn(Schedulers.newThread())
+                                .observeOn(AndroidSchedulers.mainThread())
+                                .subscribe(new LocationSubscriber());
+                    }
+                }));
     }
 
     @Override
     protected void onDestroy() {
         subscriptions.unsubscribe();
+        mapRepository.reset();
         super.onDestroy();
     }
 
@@ -138,10 +167,10 @@ public class MapActivity extends RoboActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    private class GoogleMapSubscriber extends Subscriber<WeatherBusMap> {
+    private class LocationSubscriber extends Subscriber<Location> {
+
         @Override
         public void onCompleted() {
-
         }
 
         @Override
@@ -150,17 +179,22 @@ public class MapActivity extends RoboActivity {
         }
 
         @Override
-        public void onNext(WeatherBusMap googleMap) {
-            MapActivity.this.googleMap = googleMap;
-            googleMap.setMyLocationEnabled(true);
+        public void onNext(Location location) {
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            weatherBusMap.moveCamera(latLng);
+            weatherBusMap.setMyLocationEnabled(true);
 
-            LatLngBounds bounds = googleMap.getLatLngBounds();
+            LatLngBounds bounds = weatherBusMap.getLatLngBounds();
 
             LatLng center = bounds.getCenter();
             double left = bounds.northeast.latitude - bounds.southwest.latitude;
             double right = bounds.northeast.longitude - bounds.southwest.longitude;
-            service.getStopsForLocation(center.latitude, center.longitude, left, right)
-                    .observeOn(AndroidSchedulers.mainThread())
+            Observable<StopForLocationResponse> response = service.getStopsForLocation(
+                    center.latitude,
+                    center.longitude,
+                    left,
+                    right);
+            response.observeOn(AndroidSchedulers.mainThread())
                     .subscribeOn(Schedulers.newThread())
                     .subscribe(new StopForLocationResponsesSubscriber());
         }
@@ -186,14 +220,13 @@ public class MapActivity extends RoboActivity {
                     busStop.setFavorite(isFavorite);
                     adapter.add(busStop);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                    WeatherBusMarker marker = googleMap.addMarker(new MarkerOptions()
+                    WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
                             .position(stopPosition)
                             .title(busStop.getResponse().getName()));
                     marker.setFavorite(isFavorite);
-                    markerIds.put(busStop,marker.getId());
+                    markerIds.put(busStop,marker);
                 }
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);
-                stopList.setLayoutParams(params);
+                stopList.setVisibility(View.VISIBLE);
                 progressBar.setVisibility(View.GONE);
             }
         }
