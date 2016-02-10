@@ -1,26 +1,25 @@
 package io.pivotal.weatherbus.app.repositories;
 
-import android.location.Location;
-import com.google.android.gms.maps.model.LatLng;
 import io.pivotal.weatherbus.app.map.*;
 import rx.Observable;
 import rx.Subscriber;
 import rx.functions.Func1;
-import rx.functions.Func2;
 import rx.subjects.BehaviorSubject;
 
 public class MapRepository {
 
     LocationRepository locationRepository;
     private BehaviorSubject<WeatherBusMap> behaviorSubject;
+    private boolean isCacheValid = false;
 
     public MapRepository(LocationRepository locationRepository) {
         this.locationRepository = locationRepository;
     }
 
     public Observable<WeatherBusMap> getOnMapReadyObservable(final MapFragmentAdapter mapFragment) {
-        if(behaviorSubject == null) {
+        if(behaviorSubject == null || !isCacheValid) {
             behaviorSubject = create(mapFragment);
+            isCacheValid = true;
         }
         return behaviorSubject;
     }
@@ -49,7 +48,7 @@ public class MapRepository {
     }
 
     public void reset() {
-        behaviorSubject = null;
+        isCacheValid = false;
     }
 
     private BehaviorSubject<WeatherBusMap> create(final MapFragmentAdapter mapFragment) {

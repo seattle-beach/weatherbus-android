@@ -1,17 +1,15 @@
 package io.pivotal.weatherbus.app.repositories;
 
-import com.google.android.gms.maps.model.LatLng;
+import android.location.Location;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.activities.MapActivity;
 import io.pivotal.weatherbus.app.map.*;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.annotation.Config;
@@ -20,15 +18,11 @@ import rx.observers.TestSubscriber;
 
 import java.util.Arrays;
 
-import android.location.Location;
-import rx.plugins.RxJavaPlugins;
-import rx.plugins.RxJavaSchedulersHook;
-import rx.plugins.RxJavaTestPlugins;
-import rx.schedulers.Schedulers;
-
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(WeatherBusTestRunner.class)
@@ -84,6 +78,21 @@ public class MapRepositoryTest {
         markerObservable.subscribe(subscriber);
         subscriber.assertNoErrors();
         subscriber.assertReceivedOnNext(Arrays.asList(marker));
+    }
+
+    @Test
+    public void onReset_itShouldReturnNewObservable() {
+        Observable<WeatherBusMap> first = subject.getOnMapReadyObservable(fragmentAdapter);
+        subject.reset();
+        Observable<WeatherBusMap> second = subject.getOnMapReadyObservable(fragmentAdapter);
+        assertFalse(first.equals(second));
+    }
+
+    @Test
+    public void withoutReset_itShouldReturnSameObservable() {
+        Observable<WeatherBusMap> first = subject.getOnMapReadyObservable(fragmentAdapter);
+        Observable<WeatherBusMap> second = subject.getOnMapReadyObservable(fragmentAdapter);
+        assertTrue(first.equals(second));
     }
 
     private class StubMapFragmentAdapter extends MapFragmentAdapter {

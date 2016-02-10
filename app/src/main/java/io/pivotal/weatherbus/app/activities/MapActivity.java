@@ -3,11 +3,13 @@ package io.pivotal.weatherbus.app.activities;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.*;
+import android.widget.AdapterView;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.Toast;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -30,7 +32,6 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
-import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 import rx.subscriptions.Subscriptions;
@@ -170,7 +171,6 @@ public class MapActivity extends RoboActivity {
 
         @Override
         public void onCompleted() {
-            Log.v("Hi","");
         }
 
         @Override
@@ -226,8 +226,7 @@ public class MapActivity extends RoboActivity {
                     marker.setFavorite(isFavorite);
                     markerIds.put(busStop,marker);
                 }
-                //LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(FrameLayout.LayoutParams.WRAP_CONTENT, 0, 1);
-                //stopList.setLayoutParams(params);
+                stopList.setVisibility(View.VISIBLE);
                 progressBar.setVisibility(View.GONE);
             }
         }

@@ -11,7 +11,9 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.inject.Inject;
-import io.pivotal.weatherbus.app.*;
+import io.pivotal.weatherbus.app.BuildConfig;
+import io.pivotal.weatherbus.app.R;
+import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
@@ -228,7 +230,12 @@ public class MapActivityTest {
         assertThat(intent.getStringExtra("stopId")).isEqualTo("1_1234");
         assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 0");
         assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
+    }
 
+    @Test
+    public void onDestroy_itShouldResetMapRepository() {
+        subject.onDestroy();
+        verify(mapRepository).reset();
     }
 
     private void fulfillRequests() {

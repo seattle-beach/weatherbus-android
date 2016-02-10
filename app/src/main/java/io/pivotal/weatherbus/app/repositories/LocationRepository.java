@@ -13,7 +13,6 @@ import rx.Observable.OnSubscribe;
 import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action0;
-import rx.subjects.BehaviorSubject;
 import rx.subjects.ReplaySubject;
 import rx.subscriptions.Subscriptions;
 

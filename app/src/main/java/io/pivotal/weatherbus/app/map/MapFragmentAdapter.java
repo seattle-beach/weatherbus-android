@@ -3,8 +3,6 @@ package io.pivotal.weatherbus.app.map;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import io.pivotal.weatherbus.app.map.OnWeatherBusMapReadyCallback;
-import io.pivotal.weatherbus.app.map.WeatherBusMap;
 
 public class MapFragmentAdapter {
     private MapFragment mapFragment;
