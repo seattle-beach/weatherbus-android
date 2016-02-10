@@ -29,9 +29,9 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
-import rx.Observable;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
+import rx.subjects.ReplaySubject;
 
 import java.util.ArrayList;
 
@@ -54,7 +54,7 @@ public class MapActivityTest {
     LocationRepository locationRepository;
 
     @Inject
-    SavedStops savedStops;
+    SavedStops favoriteStops;
 
     @Mock
     WeatherBusMap googleMap;
@@ -68,27 +68,21 @@ public class MapActivityTest {
     MapActivity subject;
 
     PublishSubject<StopForLocationResponse> stopEmitter;
-    BehaviorSubject<Location> locationEmitter;
+    ReplaySubject<Location> locationEmitter;
     BehaviorSubject<WeatherBusMap> mapEmitter;
 
     StopForLocationResponse response;
+    ListView stopList;
 
     @Before
     public void setUp() throws Exception {
         mapEmitter = BehaviorSubject.create();
-        locationEmitter = BehaviorSubject.create();
+        locationEmitter = ReplaySubject.createWithSize(1);
         stopEmitter = PublishSubject.create();
 
         when(googleMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
         when(googleMap.addMarker(any(MarkerOptions.class))).thenReturn(marker);
         when(googleMap.getMarker(any(String.class))).thenReturn(marker);
-        when(location.getLatitude()).thenReturn(5.0);
-        when(location.getLongitude()).thenReturn(5.0);
-
-        when(locationRepository.fetch(any(MapActivity.class))).thenReturn(locationEmitter);
-        when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
-        when(service.getStopsForLocation(5.0, 5.0, 2.0, 2.0)).thenReturn(stopEmitter);
-
         when(googleMap.moveCamera(any(LatLng.class))).thenAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -100,7 +94,15 @@ public class MapActivityTest {
             }
         });
 
+        when(location.getLatitude()).thenReturn(5.0);
+        when(location.getLongitude()).thenReturn(5.0);
+
+        when(locationRepository.fetch(any(MapActivity.class))).thenReturn(locationEmitter);
+        when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
+        when(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 2.0, 2.0)).thenReturn(stopEmitter);
+
         subject = Robolectric.setupActivity(MapActivity.class);
+        subject.onWindowFocusChanged(true);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
@@ -116,6 +118,8 @@ public class MapActivityTest {
                 get(1).setLongitude(4.5);
             }});
         }};
+
+        stopList = (ListView)subject.findViewById(R.id.stopList);
     }
 
     @Test
@@ -125,11 +129,8 @@ public class MapActivityTest {
 
     @Test
     public void onNextMap_shouldOffsetBottomOfMap_toTopOfListView() {
-        ListView lv = (ListView)subject.findViewById(R.id.stopList);
-        shadowOf(lv).populateItems();
-        lv.setTop(40);
         mapEmitter.onNext(googleMap);
-        verify(googleMap).setPadding(0, 0 , 0 , 40);
+        verify(googleMap).setPadding(0, 0 , 0 , stopList.getTop());
     }
 
     @Test
@@ -138,22 +139,20 @@ public class MapActivityTest {
         locationEmitter.onNext(location);
         locationEmitter.onCompleted();
         verify(googleMap).setMyLocationEnabled(true);
-        verify(googleMap).moveCamera(new LatLng(5.0,5.0));
-        verify(service).getStopsForLocation(5.0, 5.0, 2.0, 2.0);
+        verify(googleMap).moveCamera(new LatLng(location.getLatitude(),location.getLatitude()));
+        verify(service).getStopsForLocation(location.getLatitude(), location.getLatitude(), 2.0, 2.0);
     }
 
     @Test
     public void onNextMapAndLocationAndStops_shouldShowNearbyStops() {
         fulfillRequests();
 
-        ListView lv = (ListView)subject.findViewById(R.id.stopList);
-        shadowOf(lv).populateItems();
-        Adapter adapter = lv.getAdapter();
-        assertThat(adapter.getCount()).isEqualTo(2);
+        shadowOf(stopList).populateItems();
+        assertThat(stopList.getChildCount()).isEqualTo(2);
 
-        String stopResponse = ((TextView) (lv.getChildAt(0))).getText().toString();
+        String stopResponse = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(stopResponse).isEqualTo("STOP 0: (4.2, 4.3)");
-        stopResponse = ((TextView) (lv.getChildAt(1))).getText().toString();
+        stopResponse = ((TextView) (stopList.getChildAt(1))).getText().toString();
         assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
 
         verify(googleMap, times(2)).addMarker(any(MarkerOptions.class));
@@ -168,15 +167,14 @@ public class MapActivityTest {
 
     @Test
     public void onNextListStops_ifStopIsFavorite_ShouldShowAStarAndColorMarker() {
-        when(savedStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
+        when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
             add("1_1234");
         }});
 
         fulfillRequests();
 
-        ListView lv = (ListView)subject.findViewById(R.id.stopList);
-        shadowOf(lv).populateItems();
-        String firstStop = ((TextView) (lv.getChildAt(0))).getText().toString();
+        shadowOf(stopList).populateItems();
+        String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
         verify(googleMap,times(2)).addMarker(any(MarkerOptions.class));
         verify(marker,times(1)).setFavorite(false);
@@ -186,7 +184,6 @@ public class MapActivityTest {
     @Test
     public void onLongClick_whenIsNotFavoriteStop_shouldAddToFavoriteStops() {
         fulfillRequests();
-        ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
         Adapter adapter = stopList.getAdapter();
 
@@ -194,7 +191,7 @@ public class MapActivityTest {
                 onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
 
         String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
-        verify(savedStops,times(1)).addSavedStop(busStopId);
+        verify(favoriteStops,times(1)).addSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
         verify(marker,times(1)).setFavorite(true);
@@ -202,14 +199,12 @@ public class MapActivityTest {
 
     @Test
     public void onLongClick_shouldRemoveFavoriteStops() {
-
-        when(savedStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
+        when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
             add("1_1234");
             add("1_2234");
         }});
 
         fulfillRequests();
-        ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
         Adapter adapter = stopList.getAdapter();
 
@@ -217,7 +212,7 @@ public class MapActivityTest {
                 onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
 
         String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
-        verify(savedStops,times(1)).deleteSavedStop(busStopId);
+        verify(favoriteStops,times(1)).deleteSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
         verify(marker,times(1)).setFavorite(false);
@@ -226,7 +221,6 @@ public class MapActivityTest {
     @Test
     public void onClick_itShouldOpenBusStopActivity() {
         fulfillRequests();
-        ListView stopList = (ListView)subject.findViewById(R.id.stopList);
         shadowOf(stopList).populateItems();
         Adapter adapter = stopList.getAdapter();
         stopList.performItemClick(stopList.getChildAt(0), 0, adapter.getItemId(0));
@@ -240,6 +234,7 @@ public class MapActivityTest {
     private void fulfillRequests() {
         mapEmitter.onNext(googleMap);
         locationEmitter.onNext(location);
+        locationEmitter.onCompleted();
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
     }

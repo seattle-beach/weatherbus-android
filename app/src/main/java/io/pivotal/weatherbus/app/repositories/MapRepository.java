@@ -48,6 +48,10 @@ public class MapRepository {
         });
     }
 
+    public void reset() {
+        behaviorSubject = null;
+    }
+
     private BehaviorSubject<WeatherBusMap> create(final MapFragmentAdapter mapFragment) {
         BehaviorSubject<WeatherBusMap> subject = BehaviorSubject.create();
         Observable.create(new Observable.OnSubscribe<WeatherBusMap>() {

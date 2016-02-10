@@ -14,10 +14,11 @@ import rx.Observer;
 import rx.Subscriber;
 import rx.functions.Action0;
 import rx.subjects.BehaviorSubject;
+import rx.subjects.ReplaySubject;
 import rx.subscriptions.Subscriptions;
 
 public class LocationRepository {
-    BehaviorSubject<Location> subject;
+    ReplaySubject<Location> subject;
     public Observable<Location> fetch(final Context context) {
         if (subject == null) {
             subject = create(context);
@@ -25,8 +26,8 @@ public class LocationRepository {
         return subject;
     }
 
-    private BehaviorSubject<Location> create(final Context context) {
-        subject = BehaviorSubject.create();
+    private ReplaySubject<Location> create(final Context context) {
+        subject = ReplaySubject.createWithSize(1);
         Observable.create(new OnSubscribe<Location>() {
                 @Override
                 public void call(Subscriber<? super Location> subscriber) {
