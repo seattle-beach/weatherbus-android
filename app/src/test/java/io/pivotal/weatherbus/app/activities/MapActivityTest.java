@@ -247,6 +247,7 @@ public class MapActivityTest {
 
     @Test
     public void onMarkerClick_itShouldShowSelectedStopOnTop() {
+        fulfillRequests();
         shadowOf(stopList).populateItems();
         markerEmitter.onNext(secondMarker);
         assertThat(stopList.getSelectedItemPosition()).isEqualTo(1);
