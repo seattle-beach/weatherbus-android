@@ -23,4 +23,6 @@ android:
     # if you need to run emulator(s) during your tests
     - sys-img-x86-android-21
 
+sudo: required
+
 script: ./gradlew build
