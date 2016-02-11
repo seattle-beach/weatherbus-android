@@ -138,6 +138,30 @@ public class MapActivity extends RoboActivity {
                 }
             }
         });
+
+        mapRepository.getOnInfoWindowClickObservable(mapFragment)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<WeatherBusMarker>() {
+                    @Override
+                    public void call(WeatherBusMarker weatherBusMarker) {
+                        BusStop selectedStop = null;
+                        for(Map.Entry<BusStop, WeatherBusMarker> entry :markerIds.entrySet()) {
+                            if (entry.getValue() == weatherBusMarker) {
+                                selectedStop = entry.getKey();
+                                break;
+                            }
+                        }
+                        if (selectedStop == null) {
+                            return;
+                        }
+                        Intent intent = new Intent(MapActivity.this, BusStopActivity.class);
+                        intent.putExtra("stopId", selectedStop.getResponse().getId());
+                        intent.putExtra("stopName", selectedStop.getResponse().getName());
+                        startActivity(intent);
+                    }
+                });
+
     }
 
     @Override

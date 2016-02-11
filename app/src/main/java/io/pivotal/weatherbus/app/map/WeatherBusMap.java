@@ -11,42 +11,52 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class WeatherBusMap {
-    GoogleMap map;
-    Map<String, WeatherBusMarker> markers;
+    GoogleMap googleMap;
+    Map<String, WeatherBusMarker> weatherBusMarkers;
 
     public WeatherBusMap(GoogleMap map) {
-        this.map = map;
-        this.markers = new HashMap<String, WeatherBusMarker>();
+        this.googleMap = map;
+        this.weatherBusMarkers = new HashMap<String, WeatherBusMarker>();
     }
 
     public Void moveCamera(LatLng latLng) {
-        map.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        googleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         return null;
     }
 
     public LatLngBounds getLatLngBounds() {
-        return map.getProjection().getVisibleRegion().latLngBounds;
+        return googleMap.getProjection().getVisibleRegion().latLngBounds;
     }
 
     public WeatherBusMarker addMarker(MarkerOptions options) {
-        WeatherBusMarker marker = new WeatherBusMarker(map.addMarker(options));
-        markers.put(marker.getId(), marker);
+        WeatherBusMarker marker = new WeatherBusMarker(googleMap.addMarker(options));
+        weatherBusMarkers.put(marker.getId(), marker);
         return marker;
     }
 
     public void setMyLocationEnabled(boolean enabled) {
-        map.setMyLocationEnabled(enabled);
+        googleMap.setMyLocationEnabled(enabled);
     }
 
     public void setPadding(int left, int top, int right, int bottom) {
-        map.setPadding(left,top,right,bottom);
+        googleMap.setPadding(left,top,right,bottom);
     }
 
     public Void setOnMarkerClickListener(final OnWeatherBusMarkerClick listener) {
-        map.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+        googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
-                return listener.onMarkerClick(markers.get(marker.getId()));
+                return listener.onMarkerClick(weatherBusMarkers.get(marker.getId()));
+            }
+        });
+        return null;
+    }
+
+    public Void setOnInfoWindowClickListener(final OnWeatherBusInfoClickListener listener) {
+        googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
+            @Override
+            public void onInfoWindowClick(Marker marker) {
+                listener.onInfoWindowClick(weatherBusMarkers.get(marker.getId()));
             }
         });
         return null;

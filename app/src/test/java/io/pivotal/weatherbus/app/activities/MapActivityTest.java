@@ -76,7 +76,8 @@ public class MapActivityTest {
     PublishSubject<StopForLocationResponse> stopEmitter;
     ReplaySubject<Location> locationEmitter;
     BehaviorSubject<WeatherBusMap> mapEmitter;
-    PublishSubject<WeatherBusMarker> markerEmitter;
+    PublishSubject<WeatherBusMarker> markerClick;
+    PublishSubject<WeatherBusMarker> infoWindowClick;
 
     StopForLocationResponse response;
     ListView stopList;
@@ -86,7 +87,8 @@ public class MapActivityTest {
         mapEmitter = BehaviorSubject.create();
         locationEmitter = ReplaySubject.createWithSize(1);
         stopEmitter = PublishSubject.create();
-        markerEmitter = PublishSubject.create();
+        markerClick = PublishSubject.create();
+        infoWindowClick = PublishSubject.create();
 
         when(googleMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
         when(googleMap.addMarker(argThat(new MatchesTitle("STOP 0")))).thenReturn(firstMarker);
@@ -107,7 +109,8 @@ public class MapActivityTest {
 
         when(locationRepository.fetch(any(MapActivity.class))).thenReturn(locationEmitter);
         when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
-        when(mapRepository.getOnMarkerClickObservable(any(MapFragmentAdapter.class))).thenReturn(markerEmitter);
+        when(mapRepository.getOnMarkerClickObservable(any(MapFragmentAdapter.class))).thenReturn(markerClick);
+        when(mapRepository.getOnInfoWindowClickObservable(any(MapFragmentAdapter.class))).thenReturn(infoWindowClick);
         when(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 2.0, 2.0)).thenReturn(stopEmitter);
 
         subject = Robolectric.setupActivity(MapActivity.class);
@@ -249,10 +252,20 @@ public class MapActivityTest {
     public void onMarkerClick_itShouldShowSelectedStopOnTop() {
         fulfillRequests();
         shadowOf(stopList).populateItems();
-        markerEmitter.onNext(secondMarker);
+        markerClick.onNext(secondMarker);
         assertThat(stopList.getSelectedItemPosition()).isEqualTo(1);
-        markerEmitter.onNext(firstMarker);
+        markerClick.onNext(firstMarker);
         assertThat(stopList.getSelectedItemPosition()).isEqualTo(0);
+    }
+
+    @Test
+    public void onInfoWindowClick_itShouldOpenBusStopActivity() {
+        fulfillRequests();
+        infoWindowClick.onNext(secondMarker);
+        Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
+        assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
+        assertThat(intent.getStringExtra("stopId")).isEqualTo("1_2234");
+        assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 1");
     }
 
     private void fulfillRequests() {

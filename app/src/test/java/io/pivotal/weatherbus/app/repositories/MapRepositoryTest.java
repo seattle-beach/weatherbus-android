@@ -80,6 +80,27 @@ public class MapRepositoryTest {
     }
 
     @Test
+    public void getOnInfoWindowClick_shouldEmitMarker() {
+        final WeatherBusMarker marker = mock(WeatherBusMarker.class);
+
+        when(weatherbusMap.setOnInfoWindowClickListener(any(OnWeatherBusInfoClickListener.class))).then(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                OnWeatherBusInfoClickListener listener = (OnWeatherBusInfoClickListener) invocation.getArguments()[0];
+                listener.onInfoWindowClick(marker);
+                return null;
+            }
+        });
+
+
+        Observable<WeatherBusMarker> markerObservable = subject.getOnInfoWindowClickObservable(fragmentAdapter);
+        TestSubscriber<WeatherBusMarker> subscriber = new TestSubscriber<WeatherBusMarker>();
+        markerObservable.subscribe(subscriber);
+        subscriber.assertNoErrors();
+        subscriber.assertReceivedOnNext(Arrays.asList(marker));
+    }
+
+    @Test
     public void onReset_itShouldReturnNewObservable() {
         Observable<WeatherBusMap> first = subject.getOnMapReadyObservable(fragmentAdapter);
         subject.reset();

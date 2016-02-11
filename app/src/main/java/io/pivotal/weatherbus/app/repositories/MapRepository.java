@@ -29,23 +29,15 @@ public class MapRepository {
         if(behaviorSubject == null) {
             behaviorSubject = create(mapFragment);
         }
-        return behaviorSubject.flatMap(new Func1<WeatherBusMap, Observable<WeatherBusMarker>>() {
-            @Override
-            public Observable<WeatherBusMarker> call(final WeatherBusMap weatherBusMap) {
-                return Observable.create(new Observable.OnSubscribe<WeatherBusMarker>() {
-                    @Override
-                    public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
-                        weatherBusMap.setOnMarkerClickListener(new OnWeatherBusMarkerClick() {
-                            @Override
-                            public boolean onMarkerClick(WeatherBusMarker marker) {
-                                subscriber.onNext(marker);
-                                return false;
-                            }
-                        });
-                    }
-                });
-            }
-        });
+        return behaviorSubject.flatMap(new MarkerClickFunction());
+    }
+
+    public Observable<WeatherBusMarker> getOnInfoWindowClickObservable(final MapFragmentAdapter mapFragment) {
+        if (behaviorSubject == null) {
+            behaviorSubject = create(mapFragment);
+        }
+
+        return behaviorSubject.flatMap(new InfoWindowClickFunction());
     }
 
     public void reset() {
@@ -66,5 +58,40 @@ public class MapRepository {
             }
         }).subscribe(subject);
         return subject;
+    }
+
+    private class MarkerClickFunction implements Func1<WeatherBusMap, Observable<WeatherBusMarker>> {
+        @Override
+        public Observable<WeatherBusMarker> call(final WeatherBusMap weatherBusMap) {
+            return Observable.create(new Observable.OnSubscribe<WeatherBusMarker>() {
+                @Override
+                public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
+                    weatherBusMap.setOnMarkerClickListener(new OnWeatherBusMarkerClick() {
+                        @Override
+                        public boolean onMarkerClick(WeatherBusMarker marker) {
+                            subscriber.onNext(marker);
+                            return false;
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    private class InfoWindowClickFunction implements Func1<WeatherBusMap, Observable<WeatherBusMarker>> {
+        @Override
+        public Observable<WeatherBusMarker> call(final WeatherBusMap weatherBusMap) {
+            return Observable.create((new Observable.OnSubscribe<WeatherBusMarker>() {
+                @Override
+                public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
+                    weatherBusMap.setOnInfoWindowClickListener(new OnWeatherBusInfoClickListener() {
+                        @Override
+                        public void onInfoWindowClick(WeatherBusMarker marker) {
+                            subscriber.onNext(marker);
+                        }
+                    });
+                }
+            }));
+        }
     }
 }
