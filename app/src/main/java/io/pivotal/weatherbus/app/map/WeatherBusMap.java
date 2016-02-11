@@ -34,10 +34,6 @@ public class WeatherBusMap {
         return marker;
     }
 
-    public WeatherBusMarker getMarker(String id) {
-        return markers.get(id);
-    }
-
     public void setMyLocationEnabled(boolean enabled) {
         map.setMyLocationEnabled(enabled);
     }

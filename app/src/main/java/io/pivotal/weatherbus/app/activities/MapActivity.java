@@ -61,7 +61,7 @@ public class MapActivity extends RoboActivity {
 
     private WeatherBusMap weatherBusMap;
     private BusStopAdapter adapter;
-    private Map<BusStop, WeatherBusMarker> markerIds = new HashMap<BusStop, WeatherBusMarker>();
+    private Map<BusStop, WeatherBusMarker> markerIds;
     private Observable<Location> locationObservable;
     private Observable<WeatherBusMap> weatherBusMapObservable;
 
@@ -70,6 +70,7 @@ public class MapActivity extends RoboActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         subscriptions = Subscriptions.from();
+        markerIds = new HashMap<BusStop, WeatherBusMarker>();
 
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         stopList.setAdapter(adapter);
@@ -109,12 +110,40 @@ public class MapActivity extends RoboActivity {
         mapFragment = new MapFragmentAdapter((MapFragment) getFragmentManager().findFragmentById(R.id.map));
         weatherBusMapObservable = mapRepository.getOnMapReadyObservable(mapFragment);
         locationObservable = locationRepository.fetch(this);
+
+        mapRepository.getOnMarkerClickObservable(mapFragment)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<WeatherBusMarker>() {
+            @Override
+            public void call(WeatherBusMarker weatherBusMarker) {
+                BusStop selectedStop = null;
+                for(Map.Entry<BusStop, WeatherBusMarker> entry : markerIds.entrySet()) {
+                    if (entry.getValue() == weatherBusMarker) {
+                        selectedStop = entry.getKey();
+                        break;
+                    }
+                }
+                if (selectedStop == null) {
+                    return;
+                }
+                for(int i = 0; i < adapter.getCount(); i++) {
+                    BusStop busStop = adapter.getItem(i);
+                    if (busStop == selectedStop) {
+                        adapter.highlightItemAt(i);
+                        adapter.notifyDataSetChanged();
+                        stopList.setSelection(i);
+                        break;
+                    }
+                }
+            }
+        });
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if(!hasFocus) {
+        if(!hasFocus || subscriptions.hasSubscriptions()) {
             return;
         }
         subscriptions.add(weatherBusMapObservable
@@ -213,6 +242,7 @@ public class MapActivity extends RoboActivity {
             @Override
             public void onNext(StopForLocationResponse stopForLocationResponse) {
                 adapter.clear();
+                markerIds.clear();
                 List<String> favoriteStops = savedStops.getSavedStops();
                 for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
                     BusStop busStop = new BusStop(stopResponse);

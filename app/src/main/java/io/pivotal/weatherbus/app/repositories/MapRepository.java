@@ -3,6 +3,7 @@ package io.pivotal.weatherbus.app.repositories;
 import io.pivotal.weatherbus.app.map.*;
 import rx.Observable;
 import rx.Subscriber;
+import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.subjects.BehaviorSubject;
 

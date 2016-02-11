@@ -26,6 +26,7 @@ import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -62,7 +63,10 @@ public class MapActivityTest {
     WeatherBusMap googleMap;
 
     @Mock
-    WeatherBusMarker marker;
+    WeatherBusMarker firstMarker;
+
+    @Mock
+    WeatherBusMarker secondMarker;
 
     @Mock
     Location location;
@@ -72,6 +76,7 @@ public class MapActivityTest {
     PublishSubject<StopForLocationResponse> stopEmitter;
     ReplaySubject<Location> locationEmitter;
     BehaviorSubject<WeatherBusMap> mapEmitter;
+    PublishSubject<WeatherBusMarker> markerEmitter;
 
     StopForLocationResponse response;
     ListView stopList;
@@ -81,10 +86,11 @@ public class MapActivityTest {
         mapEmitter = BehaviorSubject.create();
         locationEmitter = ReplaySubject.createWithSize(1);
         stopEmitter = PublishSubject.create();
+        markerEmitter = PublishSubject.create();
 
         when(googleMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
-        when(googleMap.addMarker(any(MarkerOptions.class))).thenReturn(marker);
-        when(googleMap.getMarker(any(String.class))).thenReturn(marker);
+        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 0")))).thenReturn(firstMarker);
+        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(secondMarker);
         when(googleMap.moveCamera(any(LatLng.class))).thenAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -101,6 +107,7 @@ public class MapActivityTest {
 
         when(locationRepository.fetch(any(MapActivity.class))).thenReturn(locationEmitter);
         when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
+        when(mapRepository.getOnMarkerClickObservable(any(MapFragmentAdapter.class))).thenReturn(markerEmitter);
         when(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 2.0, 2.0)).thenReturn(stopEmitter);
 
         subject = Robolectric.setupActivity(MapActivity.class);
@@ -179,8 +186,8 @@ public class MapActivityTest {
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
         verify(googleMap,times(2)).addMarker(any(MarkerOptions.class));
-        verify(marker,times(1)).setFavorite(false);
-        verify(marker,times(1)).setFavorite(true);
+        verify(firstMarker).setFavorite(true);
+        verify(secondMarker).setFavorite(false);
     }
 
     @Test
@@ -193,10 +200,10 @@ public class MapActivityTest {
                 onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
 
         String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
-        verify(favoriteStops,times(1)).addSavedStop(busStopId);
+        verify(favoriteStops).addSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
-        verify(marker,times(1)).setFavorite(true);
+        verify(firstMarker).setFavorite(true);
     }
 
     @Test
@@ -214,10 +221,10 @@ public class MapActivityTest {
                 onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
 
         String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
-        verify(favoriteStops,times(1)).deleteSavedStop(busStopId);
+        verify(favoriteStops).deleteSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
-        verify(marker,times(1)).setFavorite(false);
+        verify(firstMarker).setFavorite(false);
     }
 
     @Test
@@ -238,11 +245,32 @@ public class MapActivityTest {
         verify(mapRepository).reset();
     }
 
+    @Test
+    public void onMarkerClick_itShouldShowSelectedStopOnTop() {
+        shadowOf(stopList).populateItems();
+        markerEmitter.onNext(secondMarker);
+        assertThat(stopList.getSelectedItemPosition()).isEqualTo(1);
+        markerEmitter.onNext(firstMarker);
+        assertThat(stopList.getSelectedItemPosition()).isEqualTo(0);
+    }
+
     private void fulfillRequests() {
         mapEmitter.onNext(googleMap);
         locationEmitter.onNext(location);
         locationEmitter.onCompleted();
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
+    }
+
+    private class MatchesTitle extends ArgumentMatcher<MarkerOptions> {
+        String name;
+        public MatchesTitle(String name) {
+            this.name = name;
+        }
+        @Override
+        public boolean matches(Object argument) {
+            if(argument == null) return false;
+            return ((MarkerOptions) argument).getTitle().equals(name);
+        }
     }
 }

@@ -1,6 +1,7 @@
 package io.pivotal.weatherbus.app.model;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,8 +11,14 @@ import android.widget.TextView;
 import java.util.Locale;
 
 public class BusStopAdapter extends ArrayAdapter<BusStop> {
+    int highlightItem = -1;
+
     public BusStopAdapter(Context context, int resource) {
         super(context,resource);
+    }
+
+    public void highlightItemAt(int position) {
+        highlightItem = position;
     }
 
     @Override
@@ -39,6 +46,12 @@ public class BusStopAdapter extends ArrayAdapter<BusStop> {
                 }
                 tt1.setText(text);
             }
+        }
+
+        if(position == highlightItem) {
+            view.setBackgroundColor(Color.parseColor("#ffffd8"));
+        } else {
+            view.setBackgroundColor(getContext().getResources().getColor(android.R.color.background_light));
         }
 
         return view;
