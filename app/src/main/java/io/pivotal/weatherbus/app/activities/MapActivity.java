@@ -32,6 +32,7 @@ import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.functions.Func1;
 import rx.functions.Func2;
 import rx.schedulers.Schedulers;
 import rx.subjects.BehaviorSubject;
@@ -64,7 +65,6 @@ public class MapActivity extends RoboActivity {
     private WeatherBusMap weatherBusMap;
     private BusStopAdapter adapter;
     private Map<BusStop, WeatherBusMarker> markerIds;
-    private Observable<Location> locationObservable;
 
     private BehaviorSubject<Boolean> windowFocusedSubject = BehaviorSubject.create();
 
@@ -77,38 +77,11 @@ public class MapActivity extends RoboActivity {
 
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         stopList.setAdapter(adapter);
-
-        stopList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                BusStop busStop = adapter.getItem(position);
-                startBusStopActivity(busStop.getId(),busStop.getName());
-            }
-        });
-
-        stopList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-
-                BusStop busStop = adapter.getItem(position);
-                String stopId = busStop.getId();
-
-                boolean isFavorite = busStop.isFavorite();
-                if (isFavorite) {
-                    savedStops.deleteSavedStop(stopId);
-                } else {
-                    savedStops.addSavedStop(stopId);
-                }
-                busStop.setFavorite(!isFavorite);
-                WeatherBusMarker marker = markerIds.get(busStop);
-                marker.setFavorite(!isFavorite);
-                adapter.notifyDataSetChanged();
-                return true;
-            }
-        });
+        stopList.setOnItemClickListener(new OnStopClickListener());
+        stopList.setOnItemLongClickListener(new OnStopLongClickListener());
 
         mapFragment = new MapFragmentAdapter((MapFragment) getFragmentManager().findFragmentById(R.id.map));
-        locationObservable = locationRepository.fetch(this);
+        Observable<Location> locationObservable = locationRepository.fetch(this);
 
         subscriptions.add(mapRepository.getOnMarkerClickObservable(mapFragment)
                 .subscribeOn(Schedulers.newThread())
@@ -121,37 +94,45 @@ public class MapActivity extends RoboActivity {
                 .subscribe(new OnNextInfoWindowClick()));
 
         subscriptions.add(mapRepository.getOnMapReadyObservable(mapFragment)
-                .zipWith(windowFocusedSubject, new Func2<WeatherBusMap, Boolean, WeatherBusMap>() {
-                    @Override
-                    public WeatherBusMap call(WeatherBusMap weatherBusMap, Boolean aBoolean) {
-                        return weatherBusMap;
-                    }
-                }).subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
                 .doOnNext(new Action1<WeatherBusMap>() {
                     @Override
                     public void call(WeatherBusMap weatherBusMap) {
                         MapActivity.this.weatherBusMap = weatherBusMap;
                     }
-                })
-                .subscribe(new Action1<WeatherBusMap>() {
+                }).zipWith(windowFocusedSubject, new Func2<WeatherBusMap, Boolean, WeatherBusMap>() {
                     @Override
-                    public void call(WeatherBusMap weatherBusMap) {
+                    public WeatherBusMap call(WeatherBusMap weatherBusMap, Boolean aBoolean) {
                         weatherBusMap.setPadding(0, 0, 0, stopList.getTop());
-                        locationObservable
-                                .subscribeOn(Schedulers.newThread())
-                                .observeOn(AndroidSchedulers.mainThread())
-                                .subscribe(new LocationSubscriber());
+                        weatherBusMap.setMyLocationEnabled(true);
+                        return weatherBusMap;
                     }
-                }));
-
+                }).zipWith(locationObservable, new Func2<WeatherBusMap, Location, LatLngBounds>() {
+                    @Override
+                    public LatLngBounds call(WeatherBusMap weatherBusMap, Location location) {
+                        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                        weatherBusMap.moveCamera(latLng);
+                        return weatherBusMap.getLatLngBounds();
+                    }
+                }).flatMap(new Func1<LatLngBounds, Observable<StopForLocationResponse>>() {
+                    @Override
+                    public Observable<StopForLocationResponse> call(LatLngBounds bounds) {
+                        LatLng center = bounds.getCenter();
+                        double latitudeSpan = bounds.northeast.latitude - bounds.southwest.latitude;
+                        double longitudeSpan = bounds.northeast.longitude - bounds.southwest.longitude;
+                        return service.getStopsForLocation(center.latitude, center.longitude,
+                                                            latitudeSpan, longitudeSpan);
+                    }
+                })
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new StopForLocationResponsesSubscriber()));
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            windowFocusedSubject.onNext(hasFocus);
+            windowFocusedSubject.onNext(true);
         }
     }
 
@@ -184,6 +165,49 @@ public class MapActivity extends RoboActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    private BusStop findBusStop(WeatherBusMarker weatherBusMarker) {
+        for(Map.Entry<BusStop, WeatherBusMarker> entry : markerIds.entrySet()) {
+            if (entry.getValue() == weatherBusMarker) {
+                return entry.getKey();
+            }
+        }
+        return null;
+    }
+
+    private void startBusStopActivity(String stopId, String stopName) {
+        Intent intent = new Intent(MapActivity.this, BusStopActivity.class);
+        intent.putExtra("stopId", stopId);
+        intent.putExtra("stopName", stopName);
+        startActivity(intent);
+    }
+
+    private class OnStopClickListener implements AdapterView.OnItemClickListener {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            BusStop busStop = adapter.getItem(position);
+            startBusStopActivity(busStop.getId(),busStop.getName());
+        }
+    }
+
+    private class OnStopLongClickListener implements AdapterView.OnItemLongClickListener {
+        @Override
+        public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+            BusStop busStop = adapter.getItem(position);
+            String stopId = busStop.getId();
+
+            boolean isFavorite = busStop.isFavorite();
+            if (isFavorite) {
+                savedStops.deleteSavedStop(stopId);
+            } else {
+                savedStops.addSavedStop(stopId);
+            }
+            busStop.setFavorite(!isFavorite);
+            WeatherBusMarker marker = markerIds.get(busStop);
+            marker.setFavorite(!isFavorite);
+            adapter.notifyDataSetChanged();
+            return true;
+        }
+    }
 
     private class OnNextMarkerClick implements Action1<WeatherBusMarker> {
         @Override
@@ -204,15 +228,6 @@ public class MapActivity extends RoboActivity {
         }
     }
 
-    private BusStop findBusStop(WeatherBusMarker weatherBusMarker) {
-        for(Map.Entry<BusStop, WeatherBusMarker> entry : markerIds.entrySet()) {
-            if (entry.getValue() == weatherBusMarker) {
-                return entry.getKey();
-            }
-        }
-        return null;
-    }
-
     private class OnNextInfoWindowClick implements Action1<WeatherBusMarker> {
         @Override
         public void call(WeatherBusMarker weatherBusMarker) {
@@ -224,76 +239,36 @@ public class MapActivity extends RoboActivity {
         }
     }
 
-    private void startBusStopActivity(String stopId, String stopName) {
-        Intent intent = new Intent(MapActivity.this, BusStopActivity.class);
-        intent.putExtra("stopId", stopId);
-        intent.putExtra("stopName", stopName);
-        startActivity(intent);
-    }
-
-    private class LocationSubscriber extends Subscriber<Location> {
-
+    private class StopForLocationResponsesSubscriber extends Subscriber<StopForLocationResponse> {
         @Override
         public void onCompleted() {
+
         }
 
         @Override
         public void onError(Throwable e) {
-            Toast.makeText(getApplicationContext(), "Failed to load maps!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "Failed to get stops near location!", Toast.LENGTH_SHORT).show();
         }
 
         @Override
-        public void onNext(Location location) {
-            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-            weatherBusMap.moveCamera(latLng);
-            weatherBusMap.setMyLocationEnabled(true);
-
-            LatLngBounds bounds = weatherBusMap.getLatLngBounds();
-
-            LatLng center = bounds.getCenter();
-            double left = bounds.northeast.latitude - bounds.southwest.latitude;
-            double right = bounds.northeast.longitude - bounds.southwest.longitude;
-            Observable<StopForLocationResponse> response = service.getStopsForLocation(
-                    center.latitude,
-                    center.longitude,
-                    left,
-                    right);
-            response.observeOn(AndroidSchedulers.mainThread())
-                    .subscribeOn(Schedulers.newThread())
-                    .subscribe(new StopForLocationResponsesSubscriber());
-        }
-
-        private class StopForLocationResponsesSubscriber extends Subscriber<StopForLocationResponse> {
-            @Override
-            public void onCompleted() {
-
+        public void onNext(StopForLocationResponse stopForLocationResponse) {
+            adapter.clear();
+            markerIds.clear();
+            List<String> favoriteStops = savedStops.getSavedStops();
+            for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
+                BusStop busStop = new BusStop(stopResponse);
+                boolean isFavorite = favoriteStops.contains(stopResponse.getId());
+                busStop.setFavorite(isFavorite);
+                adapter.add(busStop);
+                LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
+                WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
+                        .position(stopPosition)
+                        .title(busStop.getName()));
+                marker.setFavorite(isFavorite);
+                markerIds.put(busStop,marker);
             }
-
-            @Override
-            public void onError(Throwable e) {
-                Toast.makeText(getApplicationContext(), "Failed to get stops near location!", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onNext(StopForLocationResponse stopForLocationResponse) {
-                adapter.clear();
-                markerIds.clear();
-                List<String> favoriteStops = savedStops.getSavedStops();
-                for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
-                    BusStop busStop = new BusStop(stopResponse);
-                    boolean isFavorite = favoriteStops.contains(stopResponse.getId());
-                    busStop.setFavorite(isFavorite);
-                    adapter.add(busStop);
-                    LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                    WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
-                            .position(stopPosition)
-                            .title(busStop.getName()));
-                    marker.setFavorite(isFavorite);
-                    markerIds.put(busStop,marker);
-                }
-                stopList.setVisibility(View.VISIBLE);
-                progressBar.setVisibility(View.GONE);
-            }
+            stopList.setVisibility(View.VISIBLE);
+            progressBar.setVisibility(View.GONE);
         }
     }
 }
