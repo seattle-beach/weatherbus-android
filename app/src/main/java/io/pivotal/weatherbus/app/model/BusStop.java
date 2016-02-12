@@ -7,10 +7,17 @@ import lombok.Setter;
 @Getter
 @Setter
 public class BusStop {
-    StopForLocationResponse.BusStopResponse response;
+    final private String id;
+    final private String name;
+    final private double latitude;
+    final private double longitude;
+
     private boolean favorite;
 
     public BusStop(StopForLocationResponse.BusStopResponse response) {
-        this.response = response;
+        this.id = response.getId();
+        this.name = response.getName();
+        this.latitude = response.getLatitude();
+        this.longitude = response.getLongitude();
     }
 }

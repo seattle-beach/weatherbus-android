@@ -38,9 +38,9 @@ public class BusStopAdapter extends ArrayAdapter<BusStop> {
             TextView tt1 = (TextView) view.findViewById(android.R.id.text1);
             if (tt1 != null) {
                 String text = String.format(Locale.getDefault(), "%s: (%.1f, %.1f)",
-                        busStop.getResponse().getName(),
-                        busStop.getResponse().getLatitude(),
-                        busStop.getResponse().getLongitude());
+                        busStop.getName(),
+                        busStop.getLatitude(),
+                        busStop.getLongitude());
                 if (busStop.isFavorite()) {
                     text += " *";
                 }

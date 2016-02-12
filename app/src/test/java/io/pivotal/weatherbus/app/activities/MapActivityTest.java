@@ -202,7 +202,7 @@ public class MapActivityTest {
         assertThat(stopList.getOnItemLongClickListener().
                 onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
 
-        String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
+        String busStopId = ((BusStop) adapter.getItem(0)).getId();
         verify(favoriteStops).addSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
@@ -223,7 +223,7 @@ public class MapActivityTest {
         assertThat(stopList.getOnItemLongClickListener().
                 onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
 
-        String busStopId = ((BusStop) adapter.getItem(0)).getResponse().getId();
+        String busStopId = ((BusStop) adapter.getItem(0)).getId();
         verify(favoriteStops).deleteSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
@@ -246,6 +246,11 @@ public class MapActivityTest {
     public void onDestroy_itShouldResetMapRepository() {
         subject.onDestroy();
         verify(mapRepository).reset();
+        assertThat(locationEmitter.hasObservers()).isFalse();
+        assertThat(mapEmitter.hasObservers()).isFalse();
+        assertThat(stopEmitter.hasObservers()).isFalse();
+        assertThat(markerClick.hasObservers()).isFalse();
+        assertThat(infoWindowClick.hasObservers()).isFalse();
     }
 
     @Test
