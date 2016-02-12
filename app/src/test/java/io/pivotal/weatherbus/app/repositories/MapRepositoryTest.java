@@ -16,6 +16,7 @@ import org.robolectric.annotation.Config;
 import rx.Observable;
 import rx.observers.TestSubscriber;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 
 import static org.junit.Assert.assertFalse;
@@ -113,6 +114,28 @@ public class MapRepositoryTest {
         Observable<WeatherBusMap> first = subject.getOnMapReadyObservable(fragmentAdapter);
         Observable<WeatherBusMap> second = subject.getOnMapReadyObservable(fragmentAdapter);
         assertTrue(first.equals(second));
+    }
+
+    @Test
+    public void cacheIsValidatedAndInvalidatedAsRequested() throws Exception {
+        Field f = subject.getClass().getDeclaredField("isCacheValid");
+        f.setAccessible(true);
+        assertFalse(f.getBoolean(subject));
+
+        subject.getOnMapReadyObservable(fragmentAdapter);
+        assertTrue(f.getBoolean(subject));
+        subject.reset();
+        assertFalse(f.getBoolean(subject));
+
+        subject.getOnMarkerClickObservable(fragmentAdapter);
+        assertTrue(f.getBoolean(subject));
+        subject.reset();
+        assertFalse(f.getBoolean(subject));
+
+        subject.getOnInfoWindowClickObservable(fragmentAdapter);
+        assertTrue(f.getBoolean(subject));
+        subject.reset();
+        assertFalse(f.getBoolean(subject));
     }
 
     private class StubMapFragmentAdapter extends MapFragmentAdapter {

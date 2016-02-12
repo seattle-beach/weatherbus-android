@@ -26,17 +26,18 @@ public class MapRepository {
     }
 
     public Observable<WeatherBusMarker> getOnMarkerClickObservable(final MapFragmentAdapter mapFragment) {
-        if(behaviorSubject == null) {
+        if(behaviorSubject == null || !isCacheValid) {
             behaviorSubject = create(mapFragment);
+            isCacheValid = true;
         }
         return behaviorSubject.flatMap(new MarkerClickFunction());
     }
 
     public Observable<WeatherBusMarker> getOnInfoWindowClickObservable(final MapFragmentAdapter mapFragment) {
-        if (behaviorSubject == null) {
+        if (behaviorSubject == null || !isCacheValid) {
             behaviorSubject = create(mapFragment);
+            isCacheValid = true;
         }
-
         return behaviorSubject.flatMap(new InfoWindowClickFunction());
     }
 
@@ -51,8 +52,8 @@ public class MapRepository {
             public void call(final Subscriber<? super WeatherBusMap> subscriber) {
                 mapFragment.getMapAsync(new OnWeatherBusMapReadyCallback() {
                     @Override
-                    public void onMapReady(WeatherBusMap map) {
-                        subscriber.onNext(map);
+                    public void onMapReady(WeatherBusMap weatherBusMap) {
+                        subscriber.onNext(weatherBusMap);
                     }
                 });
             }
