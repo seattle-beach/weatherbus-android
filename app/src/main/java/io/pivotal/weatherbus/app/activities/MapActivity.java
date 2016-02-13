@@ -113,14 +113,7 @@ public class MapActivity extends RoboActivity {
                         weatherBusMap.moveCamera(latLng);
                         return weatherBusMap.getLatLngBounds();
                     }
-                }).flatMap(new StopsFromLatLngBoundsFunction())
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new StopForLocationResponsesSubscriber()));
-
-        subscriptions.add(weatherBusMapRepository.getOnCameraChangeObservable(mapFragment)
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
+                }).mergeWith(weatherBusMapRepository.getOnCameraChangeObservable(mapFragment))
                 .flatMap(new StopsFromLatLngBoundsFunction())
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -278,8 +271,8 @@ public class MapActivity extends RoboActivity {
             LatLng center = bounds.getCenter();
             double latitudeSpan = bounds.northeast.latitude - bounds.southwest.latitude;
             double longitudeSpan = bounds.northeast.longitude - bounds.southwest.longitude;
-            final Observable<StopForLocationResponse> stopsForLocation = service.getStopsForLocation(center.latitude, center.longitude, latitudeSpan, longitudeSpan);
-            return stopsForLocation;
+            return service.getStopsForLocation(center.latitude, center.longitude,
+                                                latitudeSpan, longitudeSpan);
         }
     }
 }
