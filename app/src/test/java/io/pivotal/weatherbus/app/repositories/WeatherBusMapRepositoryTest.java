@@ -1,10 +1,15 @@
 package io.pivotal.weatherbus.app.repositories;
 
 import android.location.Location;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.activities.MapActivity;
-import io.pivotal.weatherbus.app.map.*;
+import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
+import io.pivotal.weatherbus.app.map.WeatherBusMap;
+import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +32,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
-public class MapRepositoryTest {
+public class WeatherBusMapRepositoryTest {
 
     @Inject
     LocationRepository locationRepository;
@@ -41,13 +46,13 @@ public class MapRepositoryTest {
     @Mock
     Location location;
 
-    MapRepository subject;
+    WeatherBusMapRepository subject;
 
     MapFragmentAdapter fragmentAdapter;
 
     @Before
     public void setup() {
-        subject = new MapRepository(locationRepository);
+        subject = new WeatherBusMapRepository(locationRepository);
         fragmentAdapter = new StubMapFragmentAdapter();
     }
 
@@ -63,10 +68,10 @@ public class MapRepositoryTest {
     public void getOnMarkerClick_shouldEmitMarker_ifMarkerIsClicked() {
         final WeatherBusMarker marker = mock(WeatherBusMarker.class);
 
-        when(weatherbusMap.setOnMarkerClickListener(any(OnWeatherBusMarkerClick.class))).then(new Answer<Void>() {
+        when(weatherbusMap.setOnMarkerClickListener(any(WeatherBusMap.OnWeatherBusMarkerClick.class))).then(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
-                OnWeatherBusMarkerClick listener = (OnWeatherBusMarkerClick) invocation.getArguments()[0];
+                WeatherBusMap.OnWeatherBusMarkerClick listener = (WeatherBusMap.OnWeatherBusMarkerClick) invocation.getArguments()[0];
                 listener.onMarkerClick(marker);
                 return null;
             }
@@ -84,10 +89,10 @@ public class MapRepositoryTest {
     public void getOnInfoWindowClick_shouldEmitMarker() {
         final WeatherBusMarker marker = mock(WeatherBusMarker.class);
 
-        when(weatherbusMap.setOnInfoWindowClickListener(any(OnWeatherBusInfoClickListener.class))).then(new Answer<Void>() {
+        when(weatherbusMap.setOnInfoWindowClickListener(any(WeatherBusMap.OnWeatherBusInfoClickListener.class))).then(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
-                OnWeatherBusInfoClickListener listener = (OnWeatherBusInfoClickListener) invocation.getArguments()[0];
+                WeatherBusMap.OnWeatherBusInfoClickListener listener = (WeatherBusMap.OnWeatherBusInfoClickListener) invocation.getArguments()[0];
                 listener.onInfoWindowClick(marker);
                 return null;
             }
@@ -99,6 +104,27 @@ public class MapRepositoryTest {
         markerObservable.subscribe(subscriber);
         subscriber.assertNoErrors();
         subscriber.assertReceivedOnNext(Arrays.asList(marker));
+    }
+
+    @Test
+    public void getOnCameraChange_shouldEmitLatLngBounds() {
+        final LatLngBounds latLngBounds = new LatLngBounds(new LatLng(5,2), new LatLng(10,11));
+        final CameraPosition cameraPosition = new CameraPosition(new LatLng(3,3), 5.0f, 40, 40);
+
+        when(weatherbusMap.setOnCameraChangeListener(any(WeatherBusMap.OnWeatherBusCameraChangeListener.class))).then(new Answer<Void>() {
+            @Override
+            public Void answer(InvocationOnMock invocation) throws Throwable {
+                WeatherBusMap.OnWeatherBusCameraChangeListener listener = (WeatherBusMap.OnWeatherBusCameraChangeListener) invocation.getArguments()[0];
+                listener.onCameraChange(cameraPosition);
+                return null;
+            }
+        });
+        when(weatherbusMap.getLatLngBounds()).thenReturn(latLngBounds);
+        Observable<LatLngBounds> observable = subject.getOnCameraChangeObservable(fragmentAdapter);
+        TestSubscriber<LatLngBounds> subscriber = new TestSubscriber<LatLngBounds>();
+        observable.subscribe(subscriber);
+        subscriber.assertNoErrors();
+        subscriber.assertReceivedOnNext(Arrays.asList(latLngBounds));
     }
 
     @Test
@@ -118,24 +144,29 @@ public class MapRepositoryTest {
 
     @Test
     public void cacheIsValidatedAndInvalidatedAsRequested() throws Exception {
-        Field f = subject.getClass().getDeclaredField("isCacheValid");
-        f.setAccessible(true);
-        assertFalse(f.getBoolean(subject));
+        Field isCacheValidField = subject.getClass().getDeclaredField("isCacheValid");
+        isCacheValidField.setAccessible(true);
+        assertFalse(isCacheValidField.getBoolean(subject));
 
         subject.getOnMapReadyObservable(fragmentAdapter);
-        assertTrue(f.getBoolean(subject));
+        assertTrue(isCacheValidField.getBoolean(subject));
         subject.reset();
-        assertFalse(f.getBoolean(subject));
+        assertFalse(isCacheValidField.getBoolean(subject));
 
         subject.getOnMarkerClickObservable(fragmentAdapter);
-        assertTrue(f.getBoolean(subject));
+        assertTrue(isCacheValidField.getBoolean(subject));
         subject.reset();
-        assertFalse(f.getBoolean(subject));
+        assertFalse(isCacheValidField.getBoolean(subject));
 
         subject.getOnInfoWindowClickObservable(fragmentAdapter);
-        assertTrue(f.getBoolean(subject));
+        assertTrue(isCacheValidField.getBoolean(subject));
         subject.reset();
-        assertFalse(f.getBoolean(subject));
+        assertFalse(isCacheValidField.getBoolean(subject));
+
+        subject.getOnCameraChangeObservable(fragmentAdapter);
+        assertTrue(isCacheValidField.getBoolean(subject));
+        subject.reset();
+        assertFalse(isCacheValidField.getBoolean(subject));
     }
 
     private class StubMapFragmentAdapter extends MapFragmentAdapter {
@@ -144,8 +175,8 @@ public class MapRepositoryTest {
         }
 
         @Override
-        public void getMapAsync(OnWeatherBusMapReadyCallback callback) {
-            callback.onMapReady(MapRepositoryTest.this.weatherbusMap);
+        public void getMapAsync(WeatherBusMap.OnWeatherBusMapReadyCallback callback) {
+            callback.onMapReady(WeatherBusMapRepositoryTest.this.weatherbusMap);
         }
     }
 }

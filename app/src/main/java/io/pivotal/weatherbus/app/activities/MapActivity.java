@@ -23,7 +23,7 @@ import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.model.BusStopAdapter;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
-import io.pivotal.weatherbus.app.repositories.MapRepository;
+import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
@@ -57,7 +57,7 @@ public class MapActivity extends RoboActivity {
     SavedStops savedStops;
 
     @Inject
-    MapRepository mapRepository;
+    WeatherBusMapRepository weatherBusMapRepository;
 
     @Inject
     LocationRepository locationRepository;
@@ -83,17 +83,17 @@ public class MapActivity extends RoboActivity {
         mapFragment = new MapFragmentAdapter((MapFragment) getFragmentManager().findFragmentById(R.id.map));
         Observable<Location> locationObservable = locationRepository.fetch(this);
 
-        subscriptions.add(mapRepository.getOnMarkerClickObservable(mapFragment)
+        subscriptions.add(weatherBusMapRepository.getOnMarkerClickObservable(mapFragment)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new OnNextMarkerClick()));
 
-        subscriptions.add(mapRepository.getOnInfoWindowClickObservable(mapFragment)
+        subscriptions.add(weatherBusMapRepository.getOnInfoWindowClickObservable(mapFragment)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new OnNextInfoWindowClick()));
 
-        subscriptions.add(mapRepository.getOnMapReadyObservable(mapFragment)
+        subscriptions.add(weatherBusMapRepository.getOnMapReadyObservable(mapFragment)
                 .doOnNext(new Action1<WeatherBusMap>() {
                     @Override
                     public void call(WeatherBusMap weatherBusMap) {
@@ -113,16 +113,15 @@ public class MapActivity extends RoboActivity {
                         weatherBusMap.moveCamera(latLng);
                         return weatherBusMap.getLatLngBounds();
                     }
-                }).flatMap(new Func1<LatLngBounds, Observable<StopForLocationResponse>>() {
-                    @Override
-                    public Observable<StopForLocationResponse> call(LatLngBounds bounds) {
-                        LatLng center = bounds.getCenter();
-                        double latitudeSpan = bounds.northeast.latitude - bounds.southwest.latitude;
-                        double longitudeSpan = bounds.northeast.longitude - bounds.southwest.longitude;
-                        return service.getStopsForLocation(center.latitude, center.longitude,
-                                                            latitudeSpan, longitudeSpan);
-                    }
-                })
+                }).flatMap(new StopsFromLatLngBoundsFunction())
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new StopForLocationResponsesSubscriber()));
+
+        subscriptions.add(weatherBusMapRepository.getOnCameraChangeObservable(mapFragment)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .flatMap(new StopsFromLatLngBoundsFunction())
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new StopForLocationResponsesSubscriber()));
@@ -139,7 +138,7 @@ public class MapActivity extends RoboActivity {
     @Override
     protected void onDestroy() {
         subscriptions.unsubscribe();
-        mapRepository.reset();
+        weatherBusMapRepository.reset();
         super.onDestroy();
     }
 
@@ -254,6 +253,7 @@ public class MapActivity extends RoboActivity {
         public void onNext(StopForLocationResponse stopForLocationResponse) {
             adapter.clear();
             markerIds.clear();
+            weatherBusMap.clear();
             List<String> favoriteStops = savedStops.getSavedStops();
             for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
                 BusStop busStop = new BusStop(stopResponse);
@@ -269,6 +269,17 @@ public class MapActivity extends RoboActivity {
             }
             stopList.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.GONE);
+        }
+    }
+
+    private class StopsFromLatLngBoundsFunction implements Func1<LatLngBounds, Observable<StopForLocationResponse>> {
+        @Override
+        public Observable<StopForLocationResponse> call(LatLngBounds bounds) {
+            LatLng center = bounds.getCenter();
+            double latitudeSpan = bounds.northeast.latitude - bounds.southwest.latitude;
+            double longitudeSpan = bounds.northeast.longitude - bounds.southwest.longitude;
+            final Observable<StopForLocationResponse> stopsForLocation = service.getStopsForLocation(center.latitude, center.longitude, latitudeSpan, longitudeSpan);
+            return stopsForLocation;
         }
     }
 }

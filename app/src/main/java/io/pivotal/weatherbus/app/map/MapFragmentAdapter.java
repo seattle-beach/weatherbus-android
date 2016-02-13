@@ -11,7 +11,7 @@ public class MapFragmentAdapter {
         this.mapFragment = mapFragment;
     }
 
-    public void getMapAsync(final OnWeatherBusMapReadyCallback callback) {
+    public void getMapAsync(final WeatherBusMap.OnWeatherBusMapReadyCallback callback) {
         mapFragment.getMapAsync(new OnMapReadyCallback() {
             @Override
             public void onMapReady(GoogleMap googleMap) {

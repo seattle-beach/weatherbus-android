@@ -19,7 +19,7 @@ import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
-import io.pivotal.weatherbus.app.repositories.MapRepository;
+import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
@@ -51,7 +51,7 @@ public class MapActivityTest {
     WeatherBusService service;
 
     @Inject
-    MapRepository mapRepository;
+    WeatherBusMapRepository weatherBusMapRepository;
 
     @Inject
     LocationRepository locationRepository;
@@ -78,9 +78,11 @@ public class MapActivityTest {
     BehaviorSubject<WeatherBusMap> mapEmitter;
     PublishSubject<WeatherBusMarker> markerClick;
     PublishSubject<WeatherBusMarker> infoWindowClick;
+    PublishSubject<LatLngBounds> cameraChange;
 
     StopForLocationResponse response;
     ListView stopList;
+    private PublishSubject<StopForLocationResponse> newStopEmitter;
 
     @Before
     public void setUp() throws Exception {
@@ -89,6 +91,8 @@ public class MapActivityTest {
         stopEmitter = PublishSubject.create();
         markerClick = PublishSubject.create();
         infoWindowClick = PublishSubject.create();
+        cameraChange = PublishSubject.create();
+        newStopEmitter = PublishSubject.create();
 
         when(googleMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
         when(googleMap.addMarker(argThat(new MatchesTitle("STOP 0")))).thenReturn(firstMarker);
@@ -108,26 +112,19 @@ public class MapActivityTest {
         when(location.getLongitude()).thenReturn(5.0);
 
         when(locationRepository.fetch(any(MapActivity.class))).thenReturn(locationEmitter);
-        when(mapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
-        when(mapRepository.getOnMarkerClickObservable(any(MapFragmentAdapter.class))).thenReturn(markerClick);
-        when(mapRepository.getOnInfoWindowClickObservable(any(MapFragmentAdapter.class))).thenReturn(infoWindowClick);
+        when(weatherBusMapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
+        when(weatherBusMapRepository.getOnMarkerClickObservable(any(MapFragmentAdapter.class))).thenReturn(markerClick);
+        when(weatherBusMapRepository.getOnInfoWindowClickObservable(any(MapFragmentAdapter.class))).thenReturn(infoWindowClick);
         when(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 2.0, 2.0)).thenReturn(stopEmitter);
+        when(weatherBusMapRepository.getOnCameraChangeObservable(any(MapFragmentAdapter.class))).thenReturn(cameraChange);
 
         subject = Robolectric.setupActivity(MapActivity.class);
         subject.onWindowFocusChanged(true);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse());
-                get(0).setId("1_1234");
-                get(0).setName("STOP 0");
-                get(0).setLatitude(4.2);
-                get(0).setLongitude(4.3);
-                add(new BusStopResponse());
-                get(1).setId("1_2234");
-                get(1).setName("STOP 1");
-                get(1).setLatitude(4.4);
-                get(1).setLongitude(4.5);
+                add(new BusStopResponse("1_1234","STOP 0", 4.2 , 4.3));
+                add(new BusStopResponse("1_2234","STOP 1", 4.4 , 4.5));
             }});
         }};
 
@@ -243,14 +240,53 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onDestroy_itShouldResetMapRepository() {
+    public void onCameraChange_shouldReloadStops() {
+        fulfillRequests();
+        reset(service);
+        reset(googleMap);
+        when(service.getStopsForLocation(15, 15, 10, 10)).thenReturn(newStopEmitter);
+        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(secondMarker);
+        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 2")))).thenReturn(secondMarker);
+        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 3")))).thenReturn(secondMarker);
+        cameraChange.onNext(new LatLngBounds(new LatLng(10, 10), new LatLng(20, 20)));
+        verify(service).getStopsForLocation(15, 15, 10, 10);
+
+        StopForLocationResponse response = new StopForLocationResponse() {{
+            setStops(new ArrayList<BusStopResponse>() {{
+                add(new BusStopResponse("1_2234","STOP 1",4.4,4.5));
+                add(new BusStopResponse("2_2234","STOP 2" ,2.2,2.3));
+                add(new BusStopResponse("3_2234","STOP 3" ,3.2,3.3));
+            }});
+        }};
+
+        newStopEmitter.onNext(response);
+        newStopEmitter.onCompleted();
+        verify(googleMap).clear();
+
+        shadowOf(stopList).populateItems();
+        assertThat(stopList.getChildCount()).isEqualTo(3);
+
+        String stopResponse = ((TextView) (stopList.getChildAt(0))).getText().toString();
+        assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
+        stopResponse = ((TextView) (stopList.getChildAt(1))).getText().toString();
+        assertThat(stopResponse).isEqualTo("STOP 2: (2.2, 2.3)");
+        stopResponse = ((TextView) (stopList.getChildAt(2))).getText().toString();
+        assertThat(stopResponse).isEqualTo("STOP 3: (3.2, 3.3)");
+
+        verify(googleMap, times(3)).addMarker(any(MarkerOptions.class));
+    }
+
+    @Test
+    public void onDestroy_itShouldUnsubscribeFromObservables() {
         subject.onDestroy();
-        verify(mapRepository).reset();
+        verify(weatherBusMapRepository).reset();
         assertThat(locationEmitter.hasObservers()).isFalse();
         assertThat(mapEmitter.hasObservers()).isFalse();
         assertThat(stopEmitter.hasObservers()).isFalse();
         assertThat(markerClick.hasObservers()).isFalse();
         assertThat(infoWindowClick.hasObservers()).isFalse();
+        assertThat(newStopEmitter.hasObservers()).isFalse();
+        assertThat(cameraChange.hasObservers()).isFalse();
     }
 
     @Test

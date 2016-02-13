@@ -2,10 +2,7 @@ package io.pivotal.weatherbus.app.map;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,6 +39,10 @@ public class WeatherBusMap {
         googleMap.setPadding(left,top,right,bottom);
     }
 
+    public void clear() {
+        googleMap.clear();
+    }
+
     public Void setOnMarkerClickListener(final OnWeatherBusMarkerClick listener) {
         googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
@@ -60,5 +61,31 @@ public class WeatherBusMap {
             }
         });
         return null;
+    }
+
+    public Void setOnCameraChangeListener(final OnWeatherBusCameraChangeListener listener) {
+        googleMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
+            @Override
+            public void onCameraChange(CameraPosition cameraPosition) {
+                listener.onCameraChange(cameraPosition);
+            }
+        });
+        return null;
+    }
+
+    public interface OnWeatherBusMapReadyCallback {
+        void onMapReady(WeatherBusMap map);
+    }
+
+    public interface OnWeatherBusInfoClickListener {
+        void onInfoWindowClick(WeatherBusMarker marker);
+    }
+
+    public interface OnWeatherBusMarkerClick {
+        boolean onMarkerClick(WeatherBusMarker marker);
+    }
+
+    public interface OnWeatherBusCameraChangeListener {
+        void onCameraChange(CameraPosition position);
     }
 }

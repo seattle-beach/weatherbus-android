@@ -1,19 +1,22 @@
 package io.pivotal.weatherbus.app.repositories;
 
-import io.pivotal.weatherbus.app.map.*;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLngBounds;
+import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
+import io.pivotal.weatherbus.app.map.WeatherBusMap;
+import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import rx.Observable;
 import rx.Subscriber;
-import rx.functions.Action0;
 import rx.functions.Func1;
 import rx.subjects.BehaviorSubject;
 
-public class MapRepository {
+public class WeatherBusMapRepository {
 
     LocationRepository locationRepository;
     private BehaviorSubject<WeatherBusMap> behaviorSubject;
     private boolean isCacheValid = false;
 
-    public MapRepository(LocationRepository locationRepository) {
+    public WeatherBusMapRepository(LocationRepository locationRepository) {
         this.locationRepository = locationRepository;
     }
 
@@ -41,6 +44,14 @@ public class MapRepository {
         return behaviorSubject.flatMap(new InfoWindowClickFunction());
     }
 
+    public Observable<LatLngBounds> getOnCameraChangeObservable(final MapFragmentAdapter mapFragment) {
+        if (behaviorSubject == null || !isCacheValid) {
+            behaviorSubject = create(mapFragment);
+            isCacheValid = true;
+        }
+        return behaviorSubject.flatMap(new CameraChangeFunction());
+    }
+
     public void reset() {
         isCacheValid = false;
     }
@@ -50,7 +61,7 @@ public class MapRepository {
         Observable.create(new Observable.OnSubscribe<WeatherBusMap>() {
             @Override
             public void call(final Subscriber<? super WeatherBusMap> subscriber) {
-                mapFragment.getMapAsync(new OnWeatherBusMapReadyCallback() {
+                mapFragment.getMapAsync(new WeatherBusMap.OnWeatherBusMapReadyCallback() {
                     @Override
                     public void onMapReady(WeatherBusMap weatherBusMap) {
                         subscriber.onNext(weatherBusMap);
@@ -67,7 +78,7 @@ public class MapRepository {
             return Observable.create(new Observable.OnSubscribe<WeatherBusMarker>() {
                 @Override
                 public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
-                    weatherBusMap.setOnMarkerClickListener(new OnWeatherBusMarkerClick() {
+                    weatherBusMap.setOnMarkerClickListener(new WeatherBusMap.OnWeatherBusMarkerClick() {
                         @Override
                         public boolean onMarkerClick(WeatherBusMarker marker) {
                             subscriber.onNext(marker);
@@ -85,7 +96,7 @@ public class MapRepository {
             return Observable.create((new Observable.OnSubscribe<WeatherBusMarker>() {
                 @Override
                 public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
-                    weatherBusMap.setOnInfoWindowClickListener(new OnWeatherBusInfoClickListener() {
+                    weatherBusMap.setOnInfoWindowClickListener(new WeatherBusMap.OnWeatherBusInfoClickListener() {
                         @Override
                         public void onInfoWindowClick(WeatherBusMarker marker) {
                             subscriber.onNext(marker);
@@ -93,6 +104,23 @@ public class MapRepository {
                     });
                 }
             }));
+        }
+    }
+
+    private class CameraChangeFunction implements Func1<WeatherBusMap, Observable<LatLngBounds>> {
+        @Override
+        public Observable<LatLngBounds> call(final WeatherBusMap weatherBusMap) {
+            return Observable.create(new Observable.OnSubscribe<LatLngBounds>() {
+                @Override
+                public void call(final Subscriber<? super LatLngBounds> subscriber) {
+                    weatherBusMap.setOnCameraChangeListener(new WeatherBusMap.OnWeatherBusCameraChangeListener() {
+                        @Override
+                        public void onCameraChange(CameraPosition position) {
+                            subscriber.onNext(weatherBusMap.getLatLngBounds());
+                        }
+                    });
+                }
+            });
         }
     }
 }

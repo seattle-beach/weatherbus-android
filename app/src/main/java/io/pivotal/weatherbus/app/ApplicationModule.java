@@ -5,7 +5,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
-import io.pivotal.weatherbus.app.repositories.MapRepository;
+import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import retrofit.RestAdapter;
@@ -42,8 +42,8 @@ public class ApplicationModule extends AbstractModule {
 
     @Provides
     @Singleton
-    MapRepository getMapRepository(LocationRepository locationRepository) {
-        return new MapRepository(locationRepository);
+    WeatherBusMapRepository getMapRepository(LocationRepository locationRepository) {
+        return new WeatherBusMapRepository(locationRepository);
     }
 
     @Provides
