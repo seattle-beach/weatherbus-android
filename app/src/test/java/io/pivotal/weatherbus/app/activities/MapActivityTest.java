@@ -60,13 +60,16 @@ public class MapActivityTest {
     SavedStops favoriteStops;
 
     @Mock
-    WeatherBusMap googleMap;
+    WeatherBusMap weatherBusMap;
 
     @Mock
-    WeatherBusMarker firstMarker;
-
+    WeatherBusMarker markerZero;
     @Mock
-    WeatherBusMarker secondMarker;
+    WeatherBusMarker markerOne;
+    @Mock
+    WeatherBusMarker markerTwo;
+    @Mock
+    WeatherBusMarker markerThree;
 
     @Mock
     Location location;
@@ -94,16 +97,16 @@ public class MapActivityTest {
         cameraChange = PublishSubject.create();
         newStopEmitter = PublishSubject.create();
 
-        when(googleMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
-        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 0")))).thenReturn(firstMarker);
-        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(secondMarker);
-        when(googleMap.moveCamera(any(LatLng.class))).thenAnswer(new Answer<Void>() {
+        when(weatherBusMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 0")))).thenReturn(markerZero);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(markerTwo);
+        when(weatherBusMap.moveCamera(any(LatLng.class))).thenAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
                 LatLng newCenter = (LatLng) invocationOnMock.getArguments()[0];
                 LatLngBounds newBounds = new LatLngBounds(new LatLng(newCenter.latitude - 1, newCenter.longitude - 1),
                         new LatLng(newCenter.latitude + 1, newCenter.longitude + 1));
-                when(googleMap.getLatLngBounds()).thenReturn(newBounds);
+                when(weatherBusMap.getLatLngBounds()).thenReturn(newBounds);
                 return null;
             }
         });
@@ -138,17 +141,17 @@ public class MapActivityTest {
 
     @Test
     public void onNextMap_shouldOffsetBottomOfMap_toTopOfListView() {
-        mapEmitter.onNext(googleMap);
-        verify(googleMap).setPadding(0, 0 , 0 , stopList.getTop());
+        mapEmitter.onNext(weatherBusMap);
+        verify(weatherBusMap).setPadding(0, 0 , 0 , stopList.getTop());
     }
 
     @Test
     public void onNextMapAndLocation_shouldCenterMapAndEnableLocation() {
-        mapEmitter.onNext(googleMap);
+        mapEmitter.onNext(weatherBusMap);
         locationEmitter.onNext(location);
         locationEmitter.onCompleted();
-        verify(googleMap).setMyLocationEnabled(true);
-        verify(googleMap).moveCamera(new LatLng(location.getLatitude(),location.getLatitude()));
+        verify(weatherBusMap).setMyLocationEnabled(true);
+        verify(weatherBusMap).moveCamera(new LatLng(location.getLatitude(),location.getLatitude()));
         verify(service).getStopsForLocation(location.getLatitude(), location.getLatitude(), 2.0, 2.0);
     }
 
@@ -164,7 +167,7 @@ public class MapActivityTest {
         stopResponse = ((TextView) (stopList.getChildAt(1))).getText().toString();
         assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
 
-        verify(googleMap, times(2)).addMarker(any(MarkerOptions.class));
+        verify(weatherBusMap, times(2)).addMarker(any(MarkerOptions.class));
     }
 
     @Test
@@ -185,9 +188,9 @@ public class MapActivityTest {
         shadowOf(stopList).populateItems();
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
-        verify(googleMap,times(2)).addMarker(any(MarkerOptions.class));
-        verify(firstMarker).setFavorite(true);
-        verify(secondMarker).setFavorite(false);
+        verify(weatherBusMap,times(2)).addMarker(any(MarkerOptions.class));
+        verify(markerZero).setFavorite(true);
+        verify(markerTwo).setFavorite(false);
     }
 
     @Test
@@ -203,7 +206,7 @@ public class MapActivityTest {
         verify(favoriteStops).addSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
-        verify(firstMarker).setFavorite(true);
+        verify(markerZero).setFavorite(true);
     }
 
     @Test
@@ -224,7 +227,7 @@ public class MapActivityTest {
         verify(favoriteStops).deleteSavedStop(busStopId);
         String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
         assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
-        verify(firstMarker).setFavorite(false);
+        verify(markerZero).setFavorite(false);
     }
 
     @Test
@@ -242,26 +245,9 @@ public class MapActivityTest {
     @Test
     public void onCameraChange_shouldReloadStops() {
         fulfillRequests();
-        reset(service);
-        reset(googleMap);
-        when(service.getStopsForLocation(15, 15, 10, 10)).thenReturn(newStopEmitter);
-        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(secondMarker);
-        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 2")))).thenReturn(secondMarker);
-        when(googleMap.addMarker(argThat(new MatchesTitle("STOP 3")))).thenReturn(secondMarker);
-        cameraChange.onNext(new LatLngBounds(new LatLng(10, 10), new LatLng(20, 20)));
+        moveMap();
+
         verify(service).getStopsForLocation(15, 15, 10, 10);
-
-        StopForLocationResponse response = new StopForLocationResponse() {{
-            setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse("1_2234","STOP 1",4.4,4.5));
-                add(new BusStopResponse("2_2234","STOP 2" ,2.2,2.3));
-                add(new BusStopResponse("3_2234","STOP 3" ,3.2,3.3));
-            }});
-        }};
-
-        newStopEmitter.onNext(response);
-        newStopEmitter.onCompleted();
-        verify(googleMap).clear();
 
         shadowOf(stopList).populateItems();
         assertThat(stopList.getChildCount()).isEqualTo(3);
@@ -273,7 +259,19 @@ public class MapActivityTest {
         stopResponse = ((TextView) (stopList.getChildAt(2))).getText().toString();
         assertThat(stopResponse).isEqualTo("STOP 3: (3.2, 3.3)");
 
-        verify(googleMap, times(3)).addMarker(any(MarkerOptions.class));
+        verify(weatherBusMap, times(3)).addMarker(any(MarkerOptions.class));
+    }
+
+    @Test
+    public void onCameraChange_shouldClearAllMarkersButSelected() {
+        fulfillRequests();
+        shadowOf(stopList).populateItems();
+        markerClick.onNext(markerTwo);
+        moveMap();
+
+        verify(markerZero).remove();
+        verify(markerTwo,never()).remove();
+        verify(weatherBusMap, times(2)).addMarker(any(MarkerOptions.class));
     }
 
     @Test
@@ -290,19 +288,25 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onMarkerClick_itShouldShowSelectedStopOnTop() {
+    public void onMarkerClick_itShouldShowSelectedStopFirst() {
         fulfillRequests();
+        markerClick.onNext(markerZero);
+        moveMap();
         shadowOf(stopList).populateItems();
-        markerClick.onNext(secondMarker);
-        assertThat(stopList.getSelectedItemPosition()).isEqualTo(1);
-        markerClick.onNext(firstMarker);
-        assertThat(stopList.getSelectedItemPosition()).isEqualTo(0);
+        TextView textView;
+        textView = (TextView) stopList.getChildAt(0);
+        assertThat(textView.getText().toString()).contains("STOP 0");
+        markerClick.onNext(markerThree);
+        moveMap();
+        shadowOf(stopList).populateItems();
+        textView = (TextView) stopList.getChildAt(0);
+        assertThat(textView.getText().toString()).contains("STOP 3");
     }
 
     @Test
     public void onInfoWindowClick_itShouldOpenBusStopActivity() {
         fulfillRequests();
-        infoWindowClick.onNext(secondMarker);
+        infoWindowClick.onNext(markerTwo);
         Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
         assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
         assertThat(intent.getStringExtra("stopId")).isEqualTo("1_2234");
@@ -310,11 +314,30 @@ public class MapActivityTest {
     }
 
     private void fulfillRequests() {
-        mapEmitter.onNext(googleMap);
+        mapEmitter.onNext(weatherBusMap);
         locationEmitter.onNext(location);
         locationEmitter.onCompleted();
         stopEmitter.onNext(response);
         stopEmitter.onCompleted();
+    }
+
+    private void moveMap() {
+        reset(service);
+        reset(weatherBusMap);
+        when(service.getStopsForLocation(15, 15, 10, 10)).thenReturn(newStopEmitter);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(markerOne);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 2")))).thenReturn(markerTwo);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 3")))).thenReturn(markerThree);
+        cameraChange.onNext(new LatLngBounds(new LatLng(10, 10), new LatLng(20, 20)));
+        StopForLocationResponse response = new StopForLocationResponse() {{
+            setStops(new ArrayList<BusStopResponse>() {{
+                add(new BusStopResponse("1_2234","STOP 1",4.4,4.5));
+                add(new BusStopResponse("2_2234","STOP 2" ,2.2,2.3));
+                add(new BusStopResponse("3_2234","STOP 3" ,3.2,3.3));
+            }});
+        }};
+
+        newStopEmitter.onNext(response);
     }
 
     private class MatchesTitle extends ArgumentMatcher<MarkerOptions> {

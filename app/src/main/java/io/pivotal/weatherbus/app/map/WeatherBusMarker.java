@@ -10,6 +10,10 @@ public class WeatherBusMarker {
         this.marker = marker;
     }
 
+    public void remove() {
+        marker.remove();
+    }
+
     public void setFavorite(boolean isFavorite) {
         if (isFavorite) {
             marker.setIcon(BitmapDescriptorFactory.defaultMarker());
@@ -21,5 +25,8 @@ public class WeatherBusMarker {
 
     public String getId() {
         return marker.getId();
+    }
+    public String getTitle() {
+        return marker.getTitle();
     }
 }

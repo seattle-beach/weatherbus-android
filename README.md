@@ -36,6 +36,9 @@
   - Select the same android SDK folder that you added to local.properties
   - Wait for indexing to finish.
   - Run the app again.
+- Get the API key into your workstation
+  - Option 1: Get your own API Key and modify the AndroidManifest appropiately.
+  - Option 2: Get the shared .debug_keystore in the shared seattle beach google drive. Copy this into your ~/.android folder. 
 - If there are no emulators installed, click on the '...' button and Create a virtual device.
   - Select any phone device and accept
   - Close the Android Virtual Device Manager

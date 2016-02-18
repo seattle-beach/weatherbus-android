@@ -64,16 +64,17 @@ public class MapActivity extends RoboActivity {
 
     private WeatherBusMap weatherBusMap;
     private BusStopAdapter adapter;
-    private Map<BusStop, WeatherBusMarker> markerIds;
+    private Map<BusStop, WeatherBusMarker> busStopMarkers;
 
     private BehaviorSubject<Boolean> windowFocusedSubject = BehaviorSubject.create();
+    private BusStop selectedStop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
         subscriptions = Subscriptions.from();
-        markerIds = new HashMap<BusStop, WeatherBusMarker>();
+        busStopMarkers = new HashMap<BusStop, WeatherBusMarker>();
 
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         stopList.setAdapter(adapter);
@@ -158,7 +159,7 @@ public class MapActivity extends RoboActivity {
     }
 
     private BusStop findBusStop(WeatherBusMarker weatherBusMarker) {
-        for(Map.Entry<BusStop, WeatherBusMarker> entry : markerIds.entrySet()) {
+        for(Map.Entry<BusStop, WeatherBusMarker> entry : busStopMarkers.entrySet()) {
             if (entry.getValue() == weatherBusMarker) {
                 return entry.getKey();
             }
@@ -194,7 +195,7 @@ public class MapActivity extends RoboActivity {
                 savedStops.addSavedStop(stopId);
             }
             busStop.setFavorite(!isFavorite);
-            WeatherBusMarker marker = markerIds.get(busStop);
+            WeatherBusMarker marker = busStopMarkers.get(busStop);
             marker.setFavorite(!isFavorite);
             adapter.notifyDataSetChanged();
             return true;
@@ -204,19 +205,12 @@ public class MapActivity extends RoboActivity {
     private class OnNextMarkerClick implements Action1<WeatherBusMarker> {
         @Override
         public void call(WeatherBusMarker weatherBusMarker) {
-            BusStop selectedStop = findBusStop(weatherBusMarker);
+            selectedStop = findBusStop(weatherBusMarker);
             if (selectedStop == null) {
                 return;
             }
-            for(int i = 0; i < adapter.getCount(); i++) {
-                BusStop busStop = adapter.getItem(i);
-                if (busStop == selectedStop) {
-                    adapter.highlightItemAt(i);
-                    adapter.notifyDataSetChanged();
-                    stopList.setSelection(i);
-                    break;
-                }
-            }
+            adapter.highlightStop(selectedStop.getId());
+            adapter.notifyDataSetChanged();
         }
     }
 
@@ -245,20 +239,35 @@ public class MapActivity extends RoboActivity {
         @Override
         public void onNext(StopForLocationResponse stopForLocationResponse) {
             adapter.clear();
-            markerIds.clear();
-            weatherBusMap.clear();
+            if (selectedStop != null) {
+                adapter.add(selectedStop);
+            }
+            WeatherBusMarker selectedMarker = busStopMarkers.get(selectedStop);
+            for (WeatherBusMarker marker : busStopMarkers.values()) {
+                if (marker != selectedMarker) {
+                    marker.remove();
+                }
+            }
+            busStopMarkers.clear();
             List<String> favoriteStops = savedStops.getSavedStops();
             for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
-                BusStop busStop = new BusStop(stopResponse);
-                boolean isFavorite = favoriteStops.contains(stopResponse.getId());
-                busStop.setFavorite(isFavorite);
-                adapter.add(busStop);
-                LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
-                        .position(stopPosition)
-                        .title(busStop.getName()));
-                marker.setFavorite(isFavorite);
-                markerIds.put(busStop,marker);
+                BusStop busStop;
+                WeatherBusMarker marker;
+                if (selectedStop != null && selectedStop.getId().equals(stopResponse.getId())) {
+                    busStop = selectedStop;
+                    marker = selectedMarker;
+                } else {
+                    busStop = new BusStop(stopResponse);
+                    boolean isFavorite = favoriteStops.contains(stopResponse.getId());
+                    busStop.setFavorite(isFavorite);
+                    LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
+                    marker = weatherBusMap.addMarker(new MarkerOptions()
+                            .position(stopPosition)
+                            .title(busStop.getName()));
+                    marker.setFavorite(isFavorite);
+                    adapter.add(busStop);
+                }
+                busStopMarkers.put(busStop,marker);
             }
             stopList.setVisibility(View.VISIBLE);
             progressBar.setVisibility(View.GONE);
