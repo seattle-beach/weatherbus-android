@@ -7,7 +7,6 @@ buildscript {
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:1.2.3'
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
     }
 }
 apply plugin: 'com.android.application'
@@ -18,20 +17,20 @@ repositories {
 }
 
 android {
-    compileSdkVersion 21
+    compileSdkVersion 23
     buildToolsVersion "23.0.2"
 
     defaultConfig {
         applicationId "io.pivotal.weatherbus.app"
-        minSdkVersion 20
-        targetSdkVersion 21
+        minSdkVersion 21
+        targetSdkVersion 23
         versionCode 1
         versionName "1.0"
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_6
-        targetCompatibility JavaVersion.VERSION_1_6
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
     }
     buildTypes {
         release {
@@ -63,5 +62,4 @@ dependencies {
     testCompile 'org.assertj:assertj-core:1.7.0'
     testCompile 'org.robolectric:robolectric:3.1-SNAPSHOT'
     testCompile 'net.javacrumbs.json-unit:json-unit:1.8.0'
-    testCompile 'net.javacrumbs.json-unit:json-unit-spring:1.8.0'
 }
