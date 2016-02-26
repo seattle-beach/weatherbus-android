@@ -7,6 +7,8 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.model.BusRoute;
@@ -14,7 +16,6 @@ import io.pivotal.weatherbus.app.model.BusRouteAdapter;
 import io.pivotal.weatherbus.app.services.StopResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
-import roboguice.inject.InjectView;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -27,8 +28,8 @@ public class BusStopActivity extends RoboActivity {
     @Inject
     WeatherBusService service;
 
-    @InjectView(R.id.busList) ListView busList;
-    @InjectView(R.id.emptyRouteMessage) TextView message;
+    @Bind(R.id.busList) ListView busList;
+    @Bind(R.id.emptyRouteMessage) TextView message;
 
     String stopName;
     String stopId;
@@ -39,6 +40,8 @@ public class BusStopActivity extends RoboActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_bus_stop);
+        ButterKnife.bind(this);
+
         stopId = getIntent().getStringExtra("stopId");
         stopName = getIntent().getStringExtra("stopName");
         this.setTitle(stopName);

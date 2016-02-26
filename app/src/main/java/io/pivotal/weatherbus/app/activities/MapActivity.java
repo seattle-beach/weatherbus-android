@@ -10,6 +10,8 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -27,7 +29,6 @@ import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import roboguice.activity.RoboActivity;
-import roboguice.inject.InjectView;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -47,8 +48,8 @@ public class MapActivity extends RoboActivity {
     MapFragmentAdapter mapFragment;
     private CompositeSubscription subscriptions;
 
-    @InjectView(R.id.stopList) ListView stopList;
-    @InjectView(R.id.progressBar) ProgressBar progressBar;
+    @Bind(R.id.stopList) ListView stopList;
+    @Bind(R.id.progressBar) ProgressBar progressBar;
 
     @Inject
     WeatherBusService service;
@@ -73,8 +74,9 @@ public class MapActivity extends RoboActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+        ButterKnife.bind(this);
         subscriptions = Subscriptions.from();
-        busStopMarkers = new HashMap<BusStop, WeatherBusMarker>();
+        busStopMarkers = new HashMap<>();
 
         adapter = new BusStopAdapter(this, android.R.layout.simple_list_item_1);
         stopList.setAdapter(adapter);
