@@ -6,6 +6,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+import butterknife.Bind;
+import butterknife.ButterKnife;
 import io.pivotal.weatherbus.app.R;
 import org.joda.time.LocalTime;
 
@@ -15,32 +17,28 @@ public class BusRouteAdapter extends ArrayAdapter<BusRoute> {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-        if (convertView == null) {
+    public View getView(int position, View view, ViewGroup parent) {
+        ViewHolder holder;
+
+        if (view == null) {
             LayoutInflater inflater = LayoutInflater.from(getContext());
-            convertView = inflater.inflate(R.layout.route_information, parent, false);
+            view = inflater.inflate(R.layout.route_information, parent, false);
+            holder = new ViewHolder(view);
+            view.setTag(holder);
+        } else {
+            holder = (ViewHolder) view.getTag();
         }
 
         BusRoute busRoute = getItem(position);
-
-        TextView tv = (TextView) convertView.findViewById(R.id.routeNumber);
-        tv.setText(busRoute.getRouteNumber());
-
-        tv = (TextView) convertView.findViewById(R.id.name);
-        tv.setText(busRoute.getRouteName());
-
-        tv = (TextView) convertView.findViewById(R.id.status);
-        String status;
-        status = calculateStatus(busRoute);
-        tv.setText(status);
-
         long departureTime = busRoute.getPredictedTime() == 0 ? busRoute.getScheduledTime() : busRoute.getPredictedTime();
-        tv = (TextView) convertView.findViewById(R.id.time);
-        tv.setText(new LocalTime(departureTime).toString("HH:mm"));
 
-        tv = (TextView) convertView.findViewById(R.id.temperature);
-        tv.setText(String.format("%.1f", busRoute.getTemperature()));
-        return convertView;
+        holder.routeNumber.setText(busRoute.getRouteNumber());
+        holder.name.setText(busRoute.getRouteName());
+        holder.status.setText(calculateStatus(busRoute));
+        holder.time.setText(new LocalTime(departureTime).toString("HH:mm"));
+        holder.temperature.setText(String.format("%.1f", busRoute.getTemperature()));
+
+        return view;
     }
 
     private String calculateStatus(BusRoute busRoute) {
@@ -68,5 +66,17 @@ public class BusRouteAdapter extends ArrayAdapter<BusRoute> {
             status += String.format(" (%dmin)", delta);
         }
         return status;
+    }
+
+    static class ViewHolder {
+        @Bind(R.id.routeNumber) TextView routeNumber;
+        @Bind(R.id.status) TextView status;
+        @Bind(R.id.name) TextView name;
+        @Bind(R.id.time) TextView time;
+        @Bind(R.id.temperature) TextView temperature;
+
+        public ViewHolder(View view) {
+            ButterKnife.bind(this, view);
+        }
     }
 }

@@ -4,9 +4,9 @@ import android.content.Intent;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;
-import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.R;
+import io.pivotal.weatherbus.app.WeatherBusApplication;
 import io.pivotal.weatherbus.app.model.BusRoute;
 import io.pivotal.weatherbus.app.services.StopResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
@@ -21,6 +21,7 @@ import org.robolectric.shadows.ShadowApplication;
 import org.robolectric.shadows.ShadowToast;
 import rx.subjects.PublishSubject;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,6 +44,7 @@ public class BusStopActivityTest {
 
     @Before
     public void setUp() throws Exception {
+        WeatherBusApplication.inject(this);
         DateTimeZone.setDefault(DateTimeZone.UTC);
 
         stopResponseEmitter = PublishSubject.create();

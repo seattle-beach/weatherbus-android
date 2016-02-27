@@ -1,14 +1,23 @@
 package io.pivotal.weatherbus.app;
 
 import android.app.Application;
-
-import static roboguice.RoboGuice.*;
+import dagger.ObjectGraph;
 
 public class WeatherBusApplication extends Application {
+
+    protected static ObjectGraph objectGraph;
+
     @Override
     public void onCreate() {
         super.onCreate();
-        ApplicationModule module = new ApplicationModule();
-        setBaseApplicationInjector(this, DEFAULT_STAGE, newDefaultRoboModule(this), module);
+        objectGraph = ObjectGraph.create(getModule());
+    }
+
+    protected Object getModule() {
+        return new ApplicationModule(this);
+    }
+
+    public static void inject(Object object) {
+        objectGraph.inject(object);
     }
 }

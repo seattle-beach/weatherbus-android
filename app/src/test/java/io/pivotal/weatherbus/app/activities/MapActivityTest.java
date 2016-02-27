@@ -10,10 +10,10 @@ import android.widget.TextView;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
+import io.pivotal.weatherbus.app.WeatherBusApplication;
 import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
@@ -36,6 +36,7 @@ import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.ReplaySubject;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,6 +90,7 @@ public class MapActivityTest {
 
     @Before
     public void setUp() throws Exception {
+        WeatherBusApplication.inject(this);
         mapEmitter = BehaviorSubject.create();
         locationEmitter = ReplaySubject.createWithSize(1);
         stopEmitter = PublishSubject.create();

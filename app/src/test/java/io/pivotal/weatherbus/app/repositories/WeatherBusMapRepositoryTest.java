@@ -4,7 +4,6 @@ import android.location.Location;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.inject.Inject;
 import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.activities.MapActivity;
 import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
@@ -34,9 +33,6 @@ import static org.mockito.Mockito.when;
 @Config(constants = BuildConfig.class)
 public class WeatherBusMapRepositoryTest {
 
-    @Inject
-    LocationRepository locationRepository;
-
     @Mock
     WeatherBusMap weatherbusMap;
 
@@ -52,7 +48,7 @@ public class WeatherBusMapRepositoryTest {
 
     @Before
     public void setup() {
-        subject = new WeatherBusMapRepository(locationRepository);
+        subject = new WeatherBusMapRepository();
         fragmentAdapter = new StubMapFragmentAdapter();
     }
 

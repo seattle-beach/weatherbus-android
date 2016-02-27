@@ -12,13 +12,8 @@ import rx.subjects.BehaviorSubject;
 
 public class WeatherBusMapRepository {
 
-    LocationRepository locationRepository;
     private BehaviorSubject<WeatherBusMap> behaviorSubject;
     private boolean isCacheValid = false;
-
-    public WeatherBusMapRepository(LocationRepository locationRepository) {
-        this.locationRepository = locationRepository;
-    }
 
     public Observable<WeatherBusMap> getOnMapReadyObservable(final MapFragmentAdapter mapFragment) {
         if(behaviorSubject == null || !isCacheValid) {

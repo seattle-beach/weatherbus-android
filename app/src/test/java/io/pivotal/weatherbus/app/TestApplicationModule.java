@@ -1,30 +1,30 @@
 package io.pivotal.weatherbus.app;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
+import dagger.Module;
+import dagger.Provides;
+import io.pivotal.weatherbus.app.activities.BusStopActivityTest;
+import io.pivotal.weatherbus.app.activities.MapActivityTest;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
-import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
+
+import javax.inject.Singleton;
 
 import static org.mockito.Mockito.mock;
 
-public class TestApplicationModule extends AbstractModule {
-    @Override
-    protected void configure() {
-    }
-
+@Module(includes = ApplicationModule.class,
+        overrides = true,
+        library = true,
+        injects = {
+                BusStopActivityTest.class,
+                MapActivityTest.class
+        }
+)
+public class TestApplicationModule {
     @Provides
     @Singleton
     WeatherBusService getWeatherBusService() {
         return mock(WeatherBusService.class);
-    }
-
-    @Provides
-    @Singleton
-    IRetrofitWeatherBusService getIRetrofitWeatherBusService() {
-        return mock(IRetrofitWeatherBusService.class);
     }
 
     @Provides

@@ -42,12 +42,24 @@ android {
     lintOptions {
         disable 'OldTargetApi','RelativeOverlap'
     }
+
+    packagingOptions {
+        exclude 'META-INF/services/javax.annotation.processing.Processor'
+    }
+}
+
+allprojects {
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        }
+    }
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.jakewharton:butterknife:7.0.1'
-    compile 'org.roboguice:roboguice:2.0'
+    compile 'com.squareup.dagger:dagger-compiler:1.2.2'
     compile 'com.google.guava:guava:19.0-rc2'
     compile 'com.squareup.retrofit:retrofit:1.9.0'
     compile 'com.squareup.okhttp:okhttp:2.5.0'

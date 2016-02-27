@@ -1,9 +1,11 @@
 package io.pivotal.weatherbus.app;
 
+import android.content.Context;
 import android.content.SharedPreferences;
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
+import dagger.Module;
+import dagger.Provides;
+import io.pivotal.weatherbus.app.activities.BusStopActivity;
+import io.pivotal.weatherbus.app.activities.MapActivity;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
@@ -11,13 +13,25 @@ import io.pivotal.weatherbus.app.services.WeatherBusService;
 import retrofit.RestAdapter;
 import retrofit.client.OkClient;
 
-public class ApplicationModule extends AbstractModule {
+import javax.inject.Singleton;
 
-    @Override
-    protected void configure() {
+@Module(injects = {
+                BusStopActivity.class,
+                MapActivity.class
+        }
+)
+
+public class ApplicationModule {
+
+    private Context context;
+
+    ApplicationModule() {
 
     }
 
+    ApplicationModule(Context context) {
+        this.context = context;
+    }
 
     @Provides
     @Singleton
@@ -42,8 +56,14 @@ public class ApplicationModule extends AbstractModule {
 
     @Provides
     @Singleton
-    WeatherBusMapRepository getMapRepository(LocationRepository locationRepository) {
-        return new WeatherBusMapRepository(locationRepository);
+    WeatherBusMapRepository getMapRepository() {
+        return new WeatherBusMapRepository();
+    }
+
+    @Provides
+    @Singleton
+    SharedPreferences getSharedPreferences() {
+        return context.getSharedPreferences("FavoriteStops", Context.MODE_PRIVATE);
     }
 
     @Provides

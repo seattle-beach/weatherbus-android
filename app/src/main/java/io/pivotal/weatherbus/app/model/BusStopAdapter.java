@@ -2,6 +2,7 @@ package io.pivotal.weatherbus.app.model;
 
 import android.content.Context;
 import android.graphics.Color;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,10 +23,7 @@ public class BusStopAdapter extends ArrayAdapter<BusStop> {
     }
 
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
-
-        View view = convertView;
-
+    public View getView(int position, View view, ViewGroup parent) {
         if (view == null) {
             LayoutInflater vi;
             vi = LayoutInflater.from(getContext());
@@ -50,7 +48,7 @@ public class BusStopAdapter extends ArrayAdapter<BusStop> {
             if(busStop.getId().equals(selectedStopId)) {
                 view.setBackgroundColor(Color.parseColor("#ffffd8"));
             } else {
-                view.setBackgroundColor(getContext().getResources().getColor(android.R.color.background_light));
+                view.setBackgroundColor(ContextCompat.getColor(getContext(), android.R.color.background_light));
             }
         }
 
