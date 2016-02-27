@@ -17,33 +17,6 @@
             tools:ignore="MissingPrefix"
     />
 
-    <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:weightSum="2"
-            android:padding="@dimen/activity_vertical_margin"
-            android:orientation="vertical" >
-        <TextView
-                    android:id="@+id/empty"
-                    android:layout_width="fill_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:visibility="invisible"
-            />
-
-            <ListView
-                android:id="@+id/stopList"
-                android:choiceMode="singleChoice"
-                android:layout_width="fill_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:background="#FFFFFF"
-                android:visibility="invisible"
-            >
-            </ListView>
-
-    </LinearLayout>
-
     <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"

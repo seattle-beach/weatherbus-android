@@ -4,9 +4,6 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.location.Location;
 import android.view.View;
-import android.widget.Adapter;
-import android.widget.ListView;
-import android.widget.TextView;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -17,7 +14,6 @@ import io.pivotal.weatherbus.app.WeatherBusApplication;
 import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
-import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
@@ -85,7 +81,6 @@ public class MapActivityTest {
     PublishSubject<LatLngBounds> cameraChange;
 
     StopForLocationResponse response;
-    ListView stopList;
     private PublishSubject<StopForLocationResponse> newStopEmitter;
 
     @Before
@@ -101,7 +96,7 @@ public class MapActivityTest {
 
         when(weatherBusMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
         when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 0")))).thenReturn(markerZero);
-        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(markerTwo);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(markerOne);
         when(weatherBusMap.moveCamera(any(LatLng.class))).thenAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -132,19 +127,11 @@ public class MapActivityTest {
                 add(new BusStopResponse("1_2234","STOP 1", 4.4 , 4.5));
             }});
         }};
-
-        stopList = (ListView)subject.findViewById(R.id.stopList);
     }
 
     @Test
     public void onCreate_shouldShowProgressBar() {
         assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.VISIBLE);
-    }
-
-    @Test
-    public void onNextMap_shouldOffsetBottomOfMap_toTopOfListView() {
-        mapEmitter.onNext(weatherBusMap);
-        verify(weatherBusMap).setPadding(0, 0 , 0 , stopList.getTop());
     }
 
     @Test
@@ -158,17 +145,8 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onNextMapAndLocationAndStops_shouldShowNearbyStops() {
+    public void onNextMapAndLocationAndStops_shouldAddMarkersToMap() {
         fulfillRequests();
-
-        shadowOf(stopList).populateItems();
-        assertThat(stopList.getChildCount()).isEqualTo(2);
-
-        String stopResponse = ((TextView) (stopList.getChildAt(0))).getText().toString();
-        assertThat(stopResponse).isEqualTo("STOP 0: (4.2, 4.3)");
-        stopResponse = ((TextView) (stopList.getChildAt(1))).getText().toString();
-        assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
-
         verify(weatherBusMap, times(2)).addMarker(any(MarkerOptions.class));
     }
 
@@ -180,68 +158,16 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onNextListStops_ifStopIsFavorite_ShouldShowAStarAndColorMarker() {
+    public void onNextListStops_shouldAddMarkerAsFavorite() {
         when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
             add("1_1234");
         }});
 
         fulfillRequests();
-
-        shadowOf(stopList).populateItems();
-        String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
-        assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
+;
         verify(weatherBusMap,times(2)).addMarker(any(MarkerOptions.class));
         verify(markerZero).setFavorite(true);
-        verify(markerTwo).setFavorite(false);
-    }
-
-    @Test
-    public void onLongClick_whenIsNotFavoriteStop_shouldAddToFavoriteStops() {
-        fulfillRequests();
-        shadowOf(stopList).populateItems();
-        Adapter adapter = stopList.getAdapter();
-
-        assertThat(stopList.getOnItemLongClickListener().
-                onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
-
-        String busStopId = ((BusStop) adapter.getItem(0)).getId();
-        verify(favoriteStops).addSavedStop(busStopId);
-        String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
-        assertThat(firstStop.charAt(firstStop.length() - 1)).isEqualTo('*');
-        verify(markerZero).setFavorite(true);
-    }
-
-    @Test
-    public void onLongClick_shouldRemoveFavoriteStops() {
-        when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
-            add("1_1234");
-            add("1_2234");
-        }});
-
-        fulfillRequests();
-        shadowOf(stopList).populateItems();
-        Adapter adapter = stopList.getAdapter();
-
-        assertThat(stopList.getOnItemLongClickListener().
-                onItemLongClick(stopList,stopList.getChildAt(0),0,adapter.getItemId(0))).isEqualTo(true);
-
-        String busStopId = ((BusStop) adapter.getItem(0)).getId();
-        verify(favoriteStops).deleteSavedStop(busStopId);
-        String firstStop = ((TextView) (stopList.getChildAt(0))).getText().toString();
-        assertThat(firstStop.charAt(firstStop.length() - 1)).isNotEqualTo('*');
-        verify(markerZero).setFavorite(false);
-    }
-
-    @Test
-    public void onClick_itShouldOpenBusStopActivity() {
-        fulfillRequests();
-        shadowOf(stopList).populateItems();
-        Adapter adapter = stopList.getAdapter();
-        stopList.performItemClick(stopList.getChildAt(0), 0, adapter.getItemId(0));
-        Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
-        assertThat(intent.getStringExtra("stopId")).isEqualTo("1_1234");
-        assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 0");
-        assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
+        verify(markerOne).setFavorite(false);
     }
 
     @Test
@@ -250,29 +176,17 @@ public class MapActivityTest {
         moveMap();
 
         verify(service).getStopsForLocation(15, 15, 10, 10);
-
-        shadowOf(stopList).populateItems();
-        assertThat(stopList.getChildCount()).isEqualTo(3);
-
-        String stopResponse = ((TextView) (stopList.getChildAt(0))).getText().toString();
-        assertThat(stopResponse).isEqualTo("STOP 1: (4.4, 4.5)");
-        stopResponse = ((TextView) (stopList.getChildAt(1))).getText().toString();
-        assertThat(stopResponse).isEqualTo("STOP 2: (2.2, 2.3)");
-        stopResponse = ((TextView) (stopList.getChildAt(2))).getText().toString();
-        assertThat(stopResponse).isEqualTo("STOP 3: (3.2, 3.3)");
-
         verify(weatherBusMap, times(3)).addMarker(any(MarkerOptions.class));
     }
 
     @Test
     public void onCameraChange_shouldClearAllMarkersButSelected() {
         fulfillRequests();
-        shadowOf(stopList).populateItems();
-        markerClick.onNext(markerTwo);
+        markerClick.onNext(markerOne);
         moveMap();
 
         verify(markerZero).remove();
-        verify(markerTwo,never()).remove();
+        verify(markerOne,never()).remove();
         verify(weatherBusMap, times(2)).addMarker(any(MarkerOptions.class));
     }
 
@@ -290,25 +204,9 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onMarkerClick_itShouldShowSelectedStopFirst() {
-        fulfillRequests();
-        markerClick.onNext(markerZero);
-        moveMap();
-        shadowOf(stopList).populateItems();
-        TextView textView;
-        textView = (TextView) stopList.getChildAt(0);
-        assertThat(textView.getText().toString()).contains("STOP 0");
-        markerClick.onNext(markerThree);
-        moveMap();
-        shadowOf(stopList).populateItems();
-        textView = (TextView) stopList.getChildAt(0);
-        assertThat(textView.getText().toString()).contains("STOP 3");
-    }
-
-    @Test
     public void onInfoWindowClick_itShouldOpenBusStopActivity() {
         fulfillRequests();
-        infoWindowClick.onNext(markerTwo);
+        infoWindowClick.onNext(markerOne);
         Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
         assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
         assertThat(intent.getStringExtra("stopId")).isEqualTo("1_2234");

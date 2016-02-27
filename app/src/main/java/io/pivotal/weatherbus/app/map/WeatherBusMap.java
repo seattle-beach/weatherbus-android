@@ -13,7 +13,7 @@ public class WeatherBusMap {
 
     public WeatherBusMap(GoogleMap map) {
         this.googleMap = map;
-        this.weatherBusMarkers = new HashMap<String, WeatherBusMarker>();
+        this.weatherBusMarkers = new HashMap<>();
     }
 
     public Void moveCamera(LatLng latLng) {
