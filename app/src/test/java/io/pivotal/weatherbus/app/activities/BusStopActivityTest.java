@@ -68,12 +68,12 @@ public class BusStopActivityTest {
         stopResponseEmitter.onNext(new StopResponse(
                 new StopResponse.StopData(
                         new ArrayList<StopResponse.StopData.Departure>() {{
-                            add(new StopResponse.StopData.Departure("0", "BUS 0", 5 * millisInMinute, 6 * millisInMinute, 76));
-                            add(new StopResponse.StopData.Departure("1", "BUS 1", 0, 7 * millisInMinute, 78.1));
-                            add(new StopResponse.StopData.Departure("2", "BUS 2", 4 * millisInMinute, 17 * millisInMinute, 78.1));
-                            add(new StopResponse.StopData.Departure("3", "BUS 3", 8 * millisInMinute, 7 * millisInMinute, 78.1));
-                            add(new StopResponse.StopData.Departure("4", "BUS 4", 19 * millisInMinute, 7 * millisInMinute, 78.1));
-                            add(new StopResponse.StopData.Departure("5", "BUS 5", 7 * millisInMinute, 7 * millisInMinute, 78.1));
+                            add(new StopResponse.StopData.Departure("0", "BUS 0", "S", 5 * millisInMinute, 6 * millisInMinute, 76));
+                            add(new StopResponse.StopData.Departure("1", "BUS 1", "SW", 0, 7 * millisInMinute, 78.1));
+                            add(new StopResponse.StopData.Departure("2", "BUS 2", "N", 4 * millisInMinute, 17 * millisInMinute, 78.1));
+                            add(new StopResponse.StopData.Departure("3", "BUS 3", "NE", 8 * millisInMinute, 7 * millisInMinute, 78.1));
+                            add(new StopResponse.StopData.Departure("4", "BUS 4", "W", 19 * millisInMinute, 7 * millisInMinute, 78.1));
+                            add(new StopResponse.StopData.Departure("5", "BUS 5", "E", 7 * millisInMinute, 7 * millisInMinute, 78.1));
                         }}
                 )));
         ListView busList = (ListView) subject.findViewById(R.id.busList);
@@ -128,7 +128,7 @@ public class BusStopActivityTest {
         stopResponseEmitter.onNext(new StopResponse(
                 new StopResponse.StopData(
                         new ArrayList<StopResponse.StopData.Departure>() {{
-                            add(new StopResponse.StopData.Departure("0", "BUS 0", 5 * 60 * 1000, 6 * 60 * 1000, 76));
+                            add(new StopResponse.StopData.Departure("0", "BUS 0", "SW", 5 * 60 * 1000, 6 * 60 * 1000, 76));
                         }}
                 )));
         ListView busList = (ListView) subject.findViewById(R.id.busList);

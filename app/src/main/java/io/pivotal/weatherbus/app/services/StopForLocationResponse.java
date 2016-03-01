@@ -14,12 +14,14 @@ public class StopForLocationResponse {
     public class BusStopResponse {
         private String id;
         private String name;
+        private String direction;
         private double latitude;
         private double longitude;
 
-        public BusStopResponse(String id, String name, double latitude, double longitude) {
+        public BusStopResponse(String id, String name, String direction, double latitude, double longitude) {
             this.id = id;
             this.name = name;
+            this.direction = direction;
             this.latitude = latitude;
             this.longitude = longitude;
         }

@@ -24,9 +24,10 @@ public class StopResponse {
         @Data
         public static class Departure {
 
-            public Departure(String busNumber, String busName, long predictedTime, long scheduledTime, double temp) {
+            public Departure(String busNumber, String busName, String direction, long predictedTime, long scheduledTime, double temp) {
                 this.busNumber = busNumber;
                 this.busName = busName;
+                this.direction = direction;
                 this.predictedTime = predictedTime;
                 this.scheduledTime = scheduledTime;
                 this.temp = temp;
@@ -37,6 +38,8 @@ public class StopResponse {
 
             @SerializedName("headsign")
             private String busName;
+
+            private String direction;
 
             private long predictedTime;
             private long scheduledTime;

@@ -4,6 +4,9 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.location.Location;
 import android.view.View;
+import android.widget.ImageButton;
+import android.widget.TextView;
+import butterknife.ButterKnife;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -123,15 +126,16 @@ public class MapActivityTest {
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse("1_1234","STOP 0", 4.2 , 4.3));
-                add(new BusStopResponse("1_2234","STOP 1", 4.4 , 4.5));
+                add(new BusStopResponse("1_1234", "STOP 0", "S", 4.2 , 4.3));
+                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4 , 4.5));
             }});
         }};
     }
 
     @Test
-    public void onCreate_shouldShowProgressBar() {
-        assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.VISIBLE);
+    public void onCreate_toolbarShouldShowCorrectly() {
+        assertThat(subject.findViewById(R.id.progress_bar).getVisibility()).isEqualTo(View.VISIBLE);
+        assertThat(subject.findViewById(R.id.bus_info).getVisibility()).isEqualTo(View.GONE);
     }
 
     @Test
@@ -151,10 +155,17 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onNextListStops_shouldRemoveProgressBar() {
+    public void onNextListStops_shouldUpdateToolBar() {
         fulfillRequests();
 
-        assertThat(subject.findViewById(R.id.progressBar).getVisibility()).isEqualTo(View.GONE);
+        assertThat(subject.findViewById(R.id.progress_bar).getVisibility()).isEqualTo(View.GONE);
+        assertThat(subject.findViewById(R.id.bus_info).getVisibility()).isEqualTo(View.VISIBLE);
+        assertThat(subject.findViewById(R.id.toolbar_favorite_button).getVisibility()).isEqualTo(View.GONE);
+
+        TextView textView = ButterKnife.findById(subject, R.id.toolbar_title);
+
+        assertThat(textView.getVisibility()).isEqualTo(View.VISIBLE);
+        assertThat(textView.getText().toString()).isEqualTo("SELECT A BUS STOP");
     }
 
     @Test
@@ -169,6 +180,53 @@ public class MapActivityTest {
         verify(markerZero).setFavorite(true);
         verify(markerOne).setFavorite(false);
     }
+
+    @Test
+    public void onMarkerClick_shouldDisplayNameInToolbar() {
+        fulfillRequests();
+        markerClick.onNext(markerZero);
+
+        TextView textView = ButterKnife.findById(subject, R.id.toolbar_title);
+        assertThat(textView.getText().toString()).isEqualTo("STOP 0 (S)");
+        assertThat(textView.getVisibility()).isEqualTo(View.VISIBLE);
+
+        moveMap();
+        assertThat(textView.getText().toString()).isEqualTo("STOP 0 (S)");
+    }
+
+    @Test
+    public void onMarkerClick_shouldDisplayFavoriteIconWithCorrectColor() {
+        when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
+            add("1_1234");
+        }});
+
+        fulfillRequests();
+        markerClick.onNext(markerZero);
+
+        ImageButton icon = ButterKnife.findById(subject, R.id.toolbar_favorite_button);
+
+        assertThat(icon.getVisibility()).isEqualTo(View.VISIBLE);
+        assertThat(icon.getColorFilter()).isNotNull();
+
+        markerClick.onNext(markerOne);
+        assertThat(icon.getColorFilter()).isNull();
+    }
+
+    @Test
+    public void onFavoriteClick_shouldToggleFavorite() {
+        fulfillRequests();
+        markerClick.onNext(markerZero);
+        ImageButton icon = ButterKnife.findById(subject, R.id.toolbar_favorite_button);
+
+        icon.performClick();
+        verify(favoriteStops).addSavedStop("1_1234");
+        assertThat(icon.getColorFilter()).isNotNull();
+        icon.performClick();
+
+        verify(favoriteStops).deleteSavedStop("1_1234");
+        assertThat(icon.getColorFilter()).isNull();
+    }
+
 
     @Test
     public void onCameraChange_shouldReloadStops() {
@@ -231,9 +289,9 @@ public class MapActivityTest {
         cameraChange.onNext(new LatLngBounds(new LatLng(10, 10), new LatLng(20, 20)));
         StopForLocationResponse response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse("1_2234","STOP 1",4.4,4.5));
-                add(new BusStopResponse("2_2234","STOP 2" ,2.2,2.3));
-                add(new BusStopResponse("3_2234","STOP 3" ,3.2,3.3));
+                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4, 4.5));
+                add(new BusStopResponse("2_2234", "STOP 2", "SE", 2.2, 2.3));
+                add(new BusStopResponse("3_2234", "STOP 3", "W", 3.2, 3.3));
             }});
         }};
 

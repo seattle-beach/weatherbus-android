@@ -1,16 +1,19 @@
 package io.pivotal.weatherbus.app.activities;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 import butterknife.Bind;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
@@ -41,18 +44,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MapActivity extends Activity {
+public class MapActivity extends AppCompatActivity {
     MapFragmentAdapter mapFragment;
     private CompositeSubscription subscriptions;
 
-    @Bind(R.id.progressBar) ProgressBar progressBar;
+    @Bind(R.id.progress_bar) ProgressBar progressBar;
+    @Bind(R.id.toolbar) Toolbar toolbar;
+    @Bind(R.id.toolbar_title) TextView toolbarTitle;
+    @Bind(R.id.bus_info) View toolbarInfo;
+    @Bind(R.id.toolbar_favorite_button) ImageButton favoriteButton;
 
     @Inject WeatherBusService service;
-
-    @Inject SavedStops savedStops;
-
+    @Inject SavedStops favoriteStops;
     @Inject WeatherBusMapRepository weatherBusMapRepository;
-
     @Inject LocationRepository locationRepository;
 
     private WeatherBusMap weatherBusMap;
@@ -69,6 +73,7 @@ public class MapActivity extends Activity {
 
         subscriptions = Subscriptions.from();
         busStopMarkers = new HashMap<>();
+        toolbarTitle.setText("SELECT A BUS STOP");
 
         mapFragment = new MapFragmentAdapter((MapFragment) getFragmentManager().findFragmentById(R.id.map));
         Observable<Location> locationObservable = locationRepository.fetch(this);
@@ -104,33 +109,28 @@ public class MapActivity extends Activity {
                 .subscribe(new StopForLocationResponsesSubscriber()));
     }
 
+    @OnClick(R.id.toolbar_favorite_button)
+    public void toggleFavorite() {
+        if (selectedStop != null) {
+            if (selectedStop.isFavorite()) {
+                selectedStop.setFavorite(false);
+                busStopMarkers.get(selectedStop).setFavorite(false);
+                favoriteStops.deleteSavedStop(selectedStop.getId());
+                favoriteButton.setColorFilter(null);
+            } else {
+                selectedStop.setFavorite(true);
+                busStopMarkers.get(selectedStop).setFavorite(true);
+                favoriteStops.addSavedStop(selectedStop.getId());
+                favoriteButton.setColorFilter(ContextCompat.getColor(MapActivity.this, android.R.color.holo_red_dark));
+            }
+        }
+    }
+
     @Override
     protected void onDestroy() {
         subscriptions.unsubscribe();
         weatherBusMapRepository.reset();
         super.onDestroy();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_map, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     private BusStop findBusStop(WeatherBusMarker weatherBusMarker) {
@@ -153,6 +153,15 @@ public class MapActivity extends Activity {
         @Override
         public void call(WeatherBusMarker weatherBusMarker) {
             selectedStop = findBusStop(weatherBusMarker);
+            if (selectedStop != null) {
+                toolbarTitle.setText(selectedStop.getName() + " (" + selectedStop.getDirection() + ")");
+                favoriteButton.setVisibility(View.VISIBLE);
+                if (selectedStop.isFavorite()) {
+                    favoriteButton.setColorFilter(ContextCompat.getColor(MapActivity.this, android.R.color.holo_red_dark));
+                } else {
+                    favoriteButton.setColorFilter(null);
+                }
+            }
         }
     }
 
@@ -187,7 +196,7 @@ public class MapActivity extends Activity {
                 }
             }
             busStopMarkers.clear();
-            List<String> favoriteStops = savedStops.getSavedStops();
+            List<String> favoriteStops = MapActivity.this.favoriteStops.getSavedStops();
             for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
                 BusStop busStop;
                 WeatherBusMarker marker;
@@ -207,6 +216,7 @@ public class MapActivity extends Activity {
                 busStopMarkers.put(busStop,marker);
             }
             progressBar.setVisibility(View.GONE);
+            toolbarInfo.setVisibility(View.VISIBLE);
         }
     }
 

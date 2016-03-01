@@ -68,6 +68,7 @@ dependencies {
     compile 'io.reactivex:rxandroid:1.1.0'
     compile 'com.google.android.gms:play-services-maps:8.4.0'
     compile 'com.google.android.gms:play-services-location:8.4.0'
+    compile 'com.android.support:appcompat-v7:23.1.1'
     compile 'joda-time:joda-time:2.3'
 
     testCompile 'junit:junit:4.11'

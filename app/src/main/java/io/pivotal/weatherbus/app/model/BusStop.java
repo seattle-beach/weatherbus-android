@@ -9,6 +9,7 @@ import lombok.Setter;
 public class BusStop {
     final private String id;
     final private String name;
+    final private String direction;
     final private double latitude;
     final private double longitude;
 
@@ -19,5 +20,6 @@ public class BusStop {
         this.name = response.getName();
         this.latitude = response.getLatitude();
         this.longitude = response.getLongitude();
+        this.direction = response.getDirection();
     }
 }
