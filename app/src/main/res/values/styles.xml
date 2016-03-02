@@ -5,7 +5,7 @@
         <!-- Customize your theme here. -->
     </style>
 
-    <style name="WeatherBusTheme" parent="Theme.AppCompat.NoActionBar">
+    <style name="WeatherBusTheme" parent="android:Theme.Material.NoActionBar">
         <!--We will be using the toolbar so no need to show ActionBar-->
         <item name="android:windowActionBar">false</item>
         <!-- Set theme colors from http://www.google.com/design/spec/style/color.html#color-color-palette-->

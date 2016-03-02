@@ -122,7 +122,6 @@ public class MapActivityTest {
         when(weatherBusMapRepository.getOnCameraChangeObservable(any(MapFragmentAdapter.class))).thenReturn(cameraChange);
 
         subject = Robolectric.setupActivity(MapActivity.class);
-        subject.onWindowFocusChanged(true);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
@@ -221,10 +220,15 @@ public class MapActivityTest {
         icon.performClick();
         verify(favoriteStops).addSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNotNull();
-        icon.performClick();
 
+        icon.performClick();
         verify(favoriteStops).deleteSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNull();
+
+        moveMap();
+        icon.performClick();
+        verify(favoriteStops,times(2)).addSavedStop("1_1234");
+        assertThat(icon.getColorFilter()).isNotNull();
     }
 
 

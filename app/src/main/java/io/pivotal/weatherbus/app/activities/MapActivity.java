@@ -1,16 +1,12 @@
 package io.pivotal.weatherbus.app.activities;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.view.View;
-import android.widget.ImageButton;
-import android.widget.ProgressBar;
-import android.widget.TextView;
-import android.widget.Toast;
+import android.widget.*;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
@@ -44,12 +40,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MapActivity extends AppCompatActivity {
+public class MapActivity extends Activity {
     MapFragmentAdapter mapFragment;
     private CompositeSubscription subscriptions;
 
     @Bind(R.id.progress_bar) ProgressBar progressBar;
-    @Bind(R.id.toolbar) Toolbar toolbar;
+    @Bind(R.id.toolbar)
+    Toolbar toolbar;
     @Bind(R.id.toolbar_title) TextView toolbarTitle;
     @Bind(R.id.bus_info) View toolbarInfo;
     @Bind(R.id.toolbar_favorite_button) ImageButton favoriteButton;
@@ -121,7 +118,7 @@ public class MapActivity extends AppCompatActivity {
                 selectedStop.setFavorite(true);
                 busStopMarkers.get(selectedStop).setFavorite(true);
                 favoriteStops.addSavedStop(selectedStop.getId());
-                favoriteButton.setColorFilter(ContextCompat.getColor(MapActivity.this, android.R.color.holo_red_dark));
+                favoriteButton.setColorFilter(ContextCompat.getColor(this,android.R.color.holo_red_dark));
             }
         }
     }
@@ -196,6 +193,9 @@ public class MapActivity extends AppCompatActivity {
                 }
             }
             busStopMarkers.clear();
+            if (selectedMarker != null) {
+                busStopMarkers.put(selectedStop, selectedMarker);
+            }
             List<String> favoriteStops = MapActivity.this.favoriteStops.getSavedStops();
             for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
                 BusStop busStop;

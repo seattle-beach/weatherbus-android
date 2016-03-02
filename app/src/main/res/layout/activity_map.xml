@@ -6,7 +6,7 @@
         tools:context=".MapActivity"
         xmlns:map="http://schemas.android.com/apk/res-auto" >
 
-    <android.support.v7.widget.Toolbar
+    <Toolbar
             android:id="@+id/toolbar"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content" >
@@ -22,26 +22,26 @@
 
             <TextView
                     android:id="@+id/toolbar_title"
-                    style="@style/Base.TextAppearance.AppCompat.Title"
                     android:layout_width="0dp"
                     android:layout_weight="85"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:gravity="center"
-                    android:text="REALLY REALLY LONG BUS STOP NAME, LIKE SERIOUSLY OMG SO LONG" />
+                    android:text="REALLY REALLY LONG BUS STOP NAME, LIKE SERIOUSLY OMG SO LONG"
+                    style="@android:style/TextAppearance.Material.Title"/>
 
             <ImageButton
                     android:id="@+id/toolbar_favorite_button"
                     android:layout_width="0dp"
                     android:layout_weight="15"
-                    style="@style/Widget.AppCompat.ActionButton"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:paddingStart="@dimen/activity_horizontal_margin"
                     android:paddingEnd="@dimen/activity_horizontal_margin"
                     android:contentDescription="favorite button"
                     android:visibility="gone"
-                    android:src="@drawable/ic_favorite" />
+                    android:src="@drawable/ic_favorite"
+                    style="@android:style/Widget.Material.ActionButton"/>
 
         </LinearLayout>
 
@@ -53,7 +53,7 @@
                 android:indeterminateOnly="true"
                 android:layout_gravity="center" />
 
-    </android.support.v7.widget.Toolbar>
+    </Toolbar>
 
     <fragment
                 android:id="@+id/map"
