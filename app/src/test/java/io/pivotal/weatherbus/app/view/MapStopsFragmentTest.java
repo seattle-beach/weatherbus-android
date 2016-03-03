@@ -1,22 +1,19 @@
-package io.pivotal.weatherbus.app.activities;
+package io.pivotal.weatherbus.app.view;
 
 import android.content.ComponentName;
 import android.content.Intent;
 import android.location.Location;
-import android.view.View;
-import android.widget.ImageButton;
-import android.widget.TextView;
-import butterknife.ButterKnife;
+import android.os.Bundle;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import io.pivotal.weatherbus.app.BuildConfig;
-import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
 import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
+import io.pivotal.weatherbus.app.model.BusStop;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.StopForLocationResponse;
@@ -29,8 +26,8 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
+import org.robolectric.util.FragmentTestUtil;
 import rx.subjects.BehaviorSubject;
 import rx.subjects.PublishSubject;
 import rx.subjects.ReplaySubject;
@@ -40,41 +37,28 @@ import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
 import static org.robolectric.Shadows.shadowOf;
 
-
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
-public class MapActivityTest {
+public class MapStopsFragmentTest {
+
     @Inject
     WeatherBusService service;
+    @Inject WeatherBusMapRepository weatherBusMapRepository;
+    @Inject LocationRepository locationRepository;
+    @Inject SavedStops favoriteStops;
 
-    @Inject
-    WeatherBusMapRepository weatherBusMapRepository;
+    @Mock WeatherBusMap weatherBusMap;
+    @Mock WeatherBusMarker markerZero;
+    @Mock WeatherBusMarker markerOne;
+    @Mock WeatherBusMarker markerTwo;
+    @Mock WeatherBusMarker markerThree;
+    @Mock Location location;
 
-    @Inject
-    LocationRepository locationRepository;
-
-    @Inject
-    SavedStops favoriteStops;
-
-    @Mock
-    WeatherBusMap weatherBusMap;
-
-    @Mock
-    WeatherBusMarker markerZero;
-    @Mock
-    WeatherBusMarker markerOne;
-    @Mock
-    WeatherBusMarker markerTwo;
-    @Mock
-    WeatherBusMarker markerThree;
-
-    @Mock
-    Location location;
-
-    MapActivity subject;
+    MapStopsFragment subject;
 
     PublishSubject<StopForLocationResponse> stopEmitter;
     ReplaySubject<Location> locationEmitter;
@@ -121,7 +105,6 @@ public class MapActivityTest {
         when(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 2.0, 2.0)).thenReturn(stopEmitter);
         when(weatherBusMapRepository.getOnCameraChangeObservable(any(MapFragmentAdapter.class))).thenReturn(cameraChange);
 
-        subject = Robolectric.setupActivity(MapActivity.class);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
@@ -129,12 +112,8 @@ public class MapActivityTest {
                 add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4 , 4.5));
             }});
         }};
-    }
-
-    @Test
-    public void onCreate_toolbarShouldShowCorrectly() {
-        assertThat(subject.findViewById(R.id.progress_bar).getVisibility()).isEqualTo(View.VISIBLE);
-        assertThat(subject.findViewById(R.id.bus_info).getVisibility()).isEqualTo(View.GONE);
+        subject = new MapStopsFragment();
+        FragmentTestUtil.startFragment(subject, MockActivity.class);
     }
 
     @Test
@@ -154,17 +133,9 @@ public class MapActivityTest {
     }
 
     @Test
-    public void onNextListStops_shouldUpdateToolBar() {
+    public void onNextListStops_shouldAlertActivity() {
         fulfillRequests();
-
-        assertThat(subject.findViewById(R.id.progress_bar).getVisibility()).isEqualTo(View.GONE);
-        assertThat(subject.findViewById(R.id.bus_info).getVisibility()).isEqualTo(View.VISIBLE);
-        assertThat(subject.findViewById(R.id.toolbar_favorite_button).getVisibility()).isEqualTo(View.GONE);
-
-        TextView textView = ButterKnife.findById(subject, R.id.toolbar_title);
-
-        assertThat(textView.getVisibility()).isEqualTo(View.VISIBLE);
-        assertThat(textView.getText().toString()).isEqualTo("SELECT A BUS STOP");
+        assertThat(((MockActivity) subject.getActivity()).stopsLoaded).isEqualTo(true);
     }
 
     @Test
@@ -174,61 +145,36 @@ public class MapActivityTest {
         }});
 
         fulfillRequests();
-;
+
         verify(weatherBusMap,times(2)).addMarker(any(MarkerOptions.class));
         verify(markerZero).setFavorite(true);
         verify(markerOne).setFavorite(false);
     }
 
     @Test
-    public void onMarkerClick_shouldDisplayNameInToolbar() {
+    public void onMarkerClick_shouldAlertActivity() {
         fulfillRequests();
         markerClick.onNext(markerZero);
-
-        TextView textView = ButterKnife.findById(subject, R.id.toolbar_title);
-        assertThat(textView.getText().toString()).isEqualTo("STOP 0 (S)");
-        assertThat(textView.getVisibility()).isEqualTo(View.VISIBLE);
+        assertThat(((MockActivity) subject.getActivity()).selectedStop.getId()).isEqualTo("1_1234");
 
         moveMap();
-        assertThat(textView.getText().toString()).isEqualTo("STOP 0 (S)");
+        assertThat(((MockActivity) subject.getActivity()).selectedStop.getId()).isEqualTo("1_1234");
     }
 
     @Test
-    public void onMarkerClick_shouldDisplayFavoriteIconWithCorrectColor() {
-        when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
-            add("1_1234");
-        }});
-
+    public void setSelectedFavorite_shouldSetMarkerToFavoriteOrNot() {
         fulfillRequests();
+        reset(markerZero);
         markerClick.onNext(markerZero);
+        subject.setSelectedFavorite(true);
+        verify(markerZero).setFavorite(true);
 
-        ImageButton icon = ButterKnife.findById(subject, R.id.toolbar_favorite_button);
-
-        assertThat(icon.getVisibility()).isEqualTo(View.VISIBLE);
-        assertThat(icon.getColorFilter()).isNotNull();
-
-        markerClick.onNext(markerOne);
-        assertThat(icon.getColorFilter()).isNull();
-    }
-
-    @Test
-    public void onFavoriteClick_shouldToggleFavorite() {
-        fulfillRequests();
-        markerClick.onNext(markerZero);
-        ImageButton icon = ButterKnife.findById(subject, R.id.toolbar_favorite_button);
-
-        icon.performClick();
-        verify(favoriteStops).addSavedStop("1_1234");
-        assertThat(icon.getColorFilter()).isNotNull();
-
-        icon.performClick();
-        verify(favoriteStops).deleteSavedStop("1_1234");
-        assertThat(icon.getColorFilter()).isNull();
+        subject.setSelectedFavorite(false);
+        verify(markerZero).setFavorite(false);
 
         moveMap();
-        icon.performClick();
-        verify(favoriteStops,times(2)).addSavedStop("1_1234");
-        assertThat(icon.getColorFilter()).isNotNull();
+        subject.setSelectedFavorite(true);
+        verify(markerZero, times(2)).setFavorite(true);
     }
 
 
@@ -269,8 +215,8 @@ public class MapActivityTest {
     public void onInfoWindowClick_itShouldOpenBusStopActivity() {
         fulfillRequests();
         infoWindowClick.onNext(markerOne);
-        Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
-        assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
+        Intent intent = shadowOf(subject.getActivity()).peekNextStartedActivityForResult().intent;
+        assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject.getActivity(), BusStopActivity.class));
         assertThat(intent.getStringExtra("stopId")).isEqualTo("1_2234");
         assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 1");
     }
@@ -311,6 +257,29 @@ public class MapActivityTest {
         public boolean matches(Object argument) {
             if(argument == null) return false;
             return ((MarkerOptions) argument).getTitle().equals(name);
+        }
+    }
+
+    public static class MockActivity extends MapActivity {
+        boolean stopsLoaded = false;
+        BusStop selectedStop = null;
+
+        public MockActivity() {
+        }
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+
+        }
+
+        @Override
+        public void onStopsLoaded() {
+            stopsLoaded = true;
+        }
+
+        @Override
+        public void onStopSelected(BusStop busStop) {
+            selectedStop = busStop;
         }
     }
 }

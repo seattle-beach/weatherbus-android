@@ -2,11 +2,12 @@ package io.pivotal.weatherbus.app;
 
 import dagger.Module;
 import dagger.Provides;
-import io.pivotal.weatherbus.app.activities.BusStopActivityTest;
-import io.pivotal.weatherbus.app.activities.MapActivityTest;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
+import io.pivotal.weatherbus.app.view.BusStopActivityTest;
+import io.pivotal.weatherbus.app.view.MapActivityTest;
+import io.pivotal.weatherbus.app.view.MapStopsFragmentTest;
 
 import javax.inject.Singleton;
 
@@ -17,7 +18,9 @@ import static org.mockito.Mockito.mock;
         library = true,
         injects = {
                 BusStopActivityTest.class,
-                MapActivityTest.class
+                MapActivityTest.class,
+                MapStopsFragmentTest.class,
+                MapActivityTest.FakeMapActivity.class
         }
 )
 public class TestApplicationModule {

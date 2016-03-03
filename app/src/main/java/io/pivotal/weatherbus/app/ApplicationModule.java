@@ -4,12 +4,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import dagger.Module;
 import dagger.Provides;
-import io.pivotal.weatherbus.app.activities.BusStopActivity;
-import io.pivotal.weatherbus.app.activities.MapActivity;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
+import io.pivotal.weatherbus.app.view.BusStopActivity;
+import io.pivotal.weatherbus.app.view.MapActivity;
+import io.pivotal.weatherbus.app.view.MapStopsFragment;
 import retrofit.RestAdapter;
 import retrofit.client.OkClient;
 
@@ -17,7 +18,8 @@ import javax.inject.Singleton;
 
 @Module(injects = {
                 BusStopActivity.class,
-                MapActivity.class
+                MapActivity.class,
+                MapStopsFragment.class
         }
 )
 
