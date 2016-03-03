@@ -20,7 +20,8 @@ import static org.mockito.Mockito.mock;
                 BusStopActivityTest.class,
                 MapActivityTest.class,
                 MapStopsFragmentTest.class,
-                MapActivityTest.FakeMapActivity.class
+                MapActivityTest.FakeMapActivity.class,
+                MapStopsFragmentTest.MockActivity.class
         }
 )
 public class TestApplicationModule {

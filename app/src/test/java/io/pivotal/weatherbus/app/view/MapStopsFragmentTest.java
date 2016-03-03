@@ -1,5 +1,6 @@
 package io.pivotal.weatherbus.app.view;
 
+import android.app.Activity;
 import android.location.Location;
 import android.os.Bundle;
 import com.google.android.gms.maps.model.LatLng;
@@ -247,7 +248,7 @@ public class MapStopsFragmentTest {
         }
     }
 
-    public static class MockActivity extends MapActivity {
+    public static class MockActivity extends Activity implements MapStopsFragment.FragmentListener {
         boolean stopsLoaded = false;
         BusStop selectedStop = null;
 
@@ -256,7 +257,7 @@ public class MapStopsFragmentTest {
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
-
+            super.onCreate(savedInstanceState);
         }
 
         @Override

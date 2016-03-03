@@ -9,6 +9,7 @@ import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import io.pivotal.weatherbus.app.view.BusStopActivity;
+import io.pivotal.weatherbus.app.view.BusStopFragment;
 import io.pivotal.weatherbus.app.view.MapActivity;
 import io.pivotal.weatherbus.app.view.MapStopsFragment;
 import retrofit.RestAdapter;

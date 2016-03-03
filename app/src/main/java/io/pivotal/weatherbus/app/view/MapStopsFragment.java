@@ -8,7 +8,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
+import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -38,19 +40,18 @@ import java.util.List;
 import java.util.Map;
 
 public class MapStopsFragment extends Fragment {
-
-
-    MapFragmentAdapter mapFragment;
-    private CompositeSubscription subscriptions;
-
     @Inject WeatherBusMapRepository weatherBusMapRepository;
     @Inject LocationRepository locationRepository;
     @Inject SavedStops favoriteStops;
     @Inject WeatherBusService service;
 
+    private MapFragmentAdapter mapFragmentAdapter;
+    private MapFragment mapFragment;
+    private CompositeSubscription subscriptions;
     private BusStop selectedStop;
     private WeatherBusMap weatherBusMap;
     private Map<BusStop, WeatherBusMarker> busStopMarkers;
+    private View view;
 
     public MapStopsFragment() {
         // Required empty public constructor
@@ -60,50 +61,24 @@ public class MapStopsFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        if (savedInstanceState != null) {
-            return;
-        }
+        if (savedInstanceState == null) {
+            WeatherBusApplication.inject(this);
+            busStopMarkers = new HashMap<>();
 
-        WeatherBusApplication.inject(this);
-        busStopMarkers = new HashMap<>();
-        subscriptions = new CompositeSubscription();
+            initializeMap();
+            initializeSubscriptions();
+        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_map_stops, container, false);
-
-        if (savedInstanceState == null) {
-            mapFragment = new MapFragmentAdapter((MapFragment) getChildFragmentManager().findFragmentById(R.id.map));
-            Observable<Location> locationObservable = locationRepository.fetch(getActivity());
-
-            subscriptions.add(weatherBusMapRepository.getOnMarkerClickObservable(mapFragment)
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new OnNextMarkerClick()));
-
-            subscriptions.add(weatherBusMapRepository.getOnMapReadyObservable(mapFragment)
-                    .doOnNext(new Action1<WeatherBusMap>() {
-                        @Override
-                        public void call(WeatherBusMap weatherBusMap) {
-                            weatherBusMap.setMyLocationEnabled(true);
-                            MapStopsFragment.this.weatherBusMap = weatherBusMap;
-                        }
-                    }).zipWith(locationObservable, new Func2<WeatherBusMap, Location, LatLngBounds>() {
-                        @Override
-                        public LatLngBounds call(WeatherBusMap weatherBusMap, Location location) {
-                            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                            weatherBusMap.moveCamera(latLng);
-                            return weatherBusMap.getLatLngBounds();
-                        }
-                    }).mergeWith(weatherBusMapRepository.getOnCameraChangeObservable(mapFragment))
-                    .flatMap(new StopsFromLatLngBoundsFunction())
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new StopForLocationResponsesSubscriber()));
+        if (view == null) {
+            view = inflater.inflate(R.layout.fragment_map_stops, container, false);
+            getChildFragmentManager()
+                    .beginTransaction()
+                    .add(R.id.mapContainer, mapFragment)
+                    .commit();
         }
-
         return view;
     }
 
@@ -114,12 +89,54 @@ public class MapStopsFragment extends Fragment {
         super.onDestroy();
     }
 
+    private void initializeMap() {
+        mapFragment = MapFragment.newInstance(new GoogleMapOptions()
+                .rotateGesturesEnabled(false)
+                .tiltGesturesEnabled(false)
+                .camera(new CameraPosition.Builder()
+                        .zoom(15)
+                        .target(new LatLng(47.5989625,-122.3359992))
+                        .build()));
+
+        mapFragmentAdapter = new MapFragmentAdapter(mapFragment);
+    }
+
+    private void initializeSubscriptions() {
+
+        subscriptions = new CompositeSubscription();
+
+        subscriptions.add(weatherBusMapRepository.getOnMarkerClickObservable(mapFragmentAdapter)
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new OnNextMarkerClick()));
+
+        subscriptions.add(weatherBusMapRepository.getOnMapReadyObservable(mapFragmentAdapter)
+                .doOnNext(new Action1<WeatherBusMap>() {
+                    @Override
+                    public void call(WeatherBusMap weatherBusMap) {
+                        weatherBusMap.setMyLocationEnabled(true);
+                        MapStopsFragment.this.weatherBusMap = weatherBusMap;
+                    }
+                }).zipWith(locationRepository.fetch(getActivity()), new Func2<WeatherBusMap, Location, LatLngBounds>() {
+                    @Override
+                    public LatLngBounds call(WeatherBusMap weatherBusMap, Location location) {
+                        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                        weatherBusMap.moveCamera(latLng);
+                        return weatherBusMap.getLatLngBounds();
+                    }
+                }).mergeWith(weatherBusMapRepository.getOnCameraChangeObservable(mapFragmentAdapter))
+                .flatMap(new StopsFromLatLngBoundsFunction())
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new StopForLocationResponsesSubscriber()));
+    }
+
     private class OnNextMarkerClick implements Action1<WeatherBusMarker> {
         @Override
         public void call(WeatherBusMarker weatherBusMarker) {
             selectedStop = findBusStop(weatherBusMarker);
             if (selectedStop != null) {
-                ((MapActivity) getActivity()).onStopSelected(selectedStop);
+                ((FragmentListener) getActivity()).onStopSelected(selectedStop);
             }
         }
     }
@@ -166,7 +183,7 @@ public class MapStopsFragment extends Fragment {
                 }
                 busStopMarkers.put(busStop,marker);
             }
-            ((MapActivity) getActivity()).onStopsLoaded();
+            ((FragmentListener) getActivity()).onStopsLoaded();
         }
     }
 
