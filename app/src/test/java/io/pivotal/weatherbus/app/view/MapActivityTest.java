@@ -2,6 +2,8 @@ package io.pivotal.weatherbus.app.view;
 
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.ComponentName;
+import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.ImageButton;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
+import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
@@ -124,6 +127,28 @@ public class MapActivityTest {
         verify(favoriteStops).deleteSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNull();
         verify(fragment).setSelectedFavorite(false);
+    }
+
+    @Test
+    public void onToolbarTitleClick_shouldOpenBusStopActivity() {
+        subject.onStopSelected(new BusStop(response.getStops().get(1)));
+        TextView title = ButterKnife.findById(subject, R.id.toolbar_title);
+        title.performClick();
+
+        Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
+        assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
+        assertThat(intent.getStringExtra("stopId")).isEqualTo("1_2234");
+        assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 1");
+    }
+
+    @Test
+    public void onToolbarTitleClick_shouldNotCrashIfClickedWithoutASelectedStop() {
+        try {
+            TextView title = ButterKnife.findById(subject, R.id.toolbar_title);
+            title.performClick();
+        } catch(Throwable e) {
+            assertThat(e.toString()).isEqualTo(""); //CRASHED
+        }
     }
 
     public static class FakeMapActivity extends MapActivity {

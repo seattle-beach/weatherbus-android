@@ -2,7 +2,6 @@ package io.pivotal.weatherbus.app.view;
 
 
 import android.app.Fragment;
-import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -84,11 +83,6 @@ public class MapStopsFragment extends Fragment {
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(new OnNextMarkerClick()));
 
-            subscriptions.add(weatherBusMapRepository.getOnInfoWindowClickObservable(mapFragment)
-                    .subscribeOn(Schedulers.newThread())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(new OnNextInfoWindowClick()));
-
             subscriptions.add(weatherBusMapRepository.getOnMapReadyObservable(mapFragment)
                     .doOnNext(new Action1<WeatherBusMap>() {
                         @Override
@@ -127,17 +121,6 @@ public class MapStopsFragment extends Fragment {
             if (selectedStop != null) {
                 ((MapActivity) getActivity()).onStopSelected(selectedStop);
             }
-        }
-    }
-
-    private class OnNextInfoWindowClick implements Action1<WeatherBusMarker> {
-        @Override
-        public void call(WeatherBusMarker weatherBusMarker) {
-            BusStop selectedStop = findBusStop(weatherBusMarker);
-            if (selectedStop == null) {
-                return;
-            }
-            startBusStopActivity(selectedStop.getId(), selectedStop.getName());
         }
     }
 
@@ -209,13 +192,6 @@ public class MapStopsFragment extends Fragment {
             }
         }
         return null;
-    }
-
-    private void startBusStopActivity(String stopId, String stopName) {
-        Intent intent = new Intent(getActivity(), BusStopActivity.class);
-        intent.putExtra("stopId", stopId);
-        intent.putExtra("stopName", stopName);
-        startActivity(intent);
     }
 
     public interface FragmentListener {

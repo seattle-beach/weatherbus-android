@@ -1,7 +1,5 @@
 package io.pivotal.weatherbus.app.view;
 
-import android.content.ComponentName;
-import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
 import com.google.android.gms.maps.model.LatLng;
@@ -39,7 +37,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
-import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
@@ -209,16 +206,6 @@ public class MapStopsFragmentTest {
         assertThat(infoWindowClick.hasObservers()).isFalse();
         assertThat(newStopEmitter.hasObservers()).isFalse();
         assertThat(cameraChange.hasObservers()).isFalse();
-    }
-
-    @Test
-    public void onInfoWindowClick_itShouldOpenBusStopActivity() {
-        fulfillRequests();
-        infoWindowClick.onNext(markerOne);
-        Intent intent = shadowOf(subject.getActivity()).peekNextStartedActivityForResult().intent;
-        assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject.getActivity(), BusStopActivity.class));
-        assertThat(intent.getStringExtra("stopId")).isEqualTo("1_2234");
-        assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 1");
     }
 
     private void fulfillRequests() {

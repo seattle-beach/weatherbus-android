@@ -1,6 +1,7 @@
 package io.pivotal.weatherbus.app.view;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -61,6 +62,16 @@ public class MapActivity extends Activity implements MapStopsFragment.FragmentLi
             favoriteButton.setColorFilter(ContextCompat.getColor(this, android.R.color.holo_red_dark));
         } else {
             favoriteButton.setColorFilter(null);
+        }
+    }
+
+    @OnClick(R.id.toolbar_title)
+    public void inflateStop() {
+        if(selectedStop != null) {
+            Intent intent = new Intent(this, BusStopActivity.class);
+            intent.putExtra("stopId", selectedStop.getId());
+            intent.putExtra("stopName", selectedStop.getName());
+            startActivity(intent);
         }
     }
 
