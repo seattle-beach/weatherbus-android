@@ -1,7 +1,6 @@
 package io.pivotal.weatherbus.app.view;
 
 import android.app.Activity;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
@@ -43,7 +42,7 @@ public class MapActivity extends Activity implements MapStopsFragment.FragmentLi
 
         MapStopsFragment mapStopsFragment = new MapStopsFragment();
         getFragmentManager().beginTransaction()
-                .add(R.id.fragment_container, mapStopsFragment).commit();
+                .add(R.id.fragment_container, mapStopsFragment, "mapFragment").commit();
     }
 
     @Override
@@ -68,10 +67,16 @@ public class MapActivity extends Activity implements MapStopsFragment.FragmentLi
     @OnClick(R.id.toolbar_title)
     public void inflateStop() {
         if(selectedStop != null) {
-            Intent intent = new Intent(this, BusStopActivity.class);
-            intent.putExtra("stopId", selectedStop.getId());
-            intent.putExtra("stopName", selectedStop.getName());
-            startActivity(intent);
+            BusRoutesFragment busRoutesFragment = new BusRoutesFragment();
+            Bundle args = new Bundle();
+            args.putString("stopId", selectedStop.getId());
+            args.putString("stopName", selectedStop.getName());
+            busRoutesFragment.setArguments(args);
+            getFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, busRoutesFragment)
+                    .addToBackStack(null)
+                    .commit();
         }
     }
 
@@ -79,11 +84,11 @@ public class MapActivity extends Activity implements MapStopsFragment.FragmentLi
     public void toggleFavorite() {
         if (selectedStop != null) {
             if (favoriteStops.getSavedStops().contains(selectedStop.getId())) {
-                ((MapStopsFragment) getFragmentManager().findFragmentById(R.id.fragment_container)).setSelectedFavorite(false);
+                ((MapStopsFragment) getFragmentManager().findFragmentByTag("mapFragment")).setSelectedFavorite(false);
                 favoriteStops.deleteSavedStop(selectedStop.getId());
                 favoriteButton.setColorFilter(null);
             } else {
-                ((MapStopsFragment) getFragmentManager().findFragmentById(R.id.fragment_container)).setSelectedFavorite(true);
+                ((MapStopsFragment) getFragmentManager().findFragmentByTag("mapFragment")).setSelectedFavorite(true);
                 favoriteStops.addSavedStop(selectedStop.getId());
                 favoriteButton.setColorFilter(ContextCompat.getColor(this,android.R.color.holo_red_dark));
             }

@@ -8,8 +8,7 @@ import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
-import io.pivotal.weatherbus.app.view.BusStopActivity;
-import io.pivotal.weatherbus.app.view.BusStopFragment;
+import io.pivotal.weatherbus.app.view.BusRoutesFragment;
 import io.pivotal.weatherbus.app.view.MapActivity;
 import io.pivotal.weatherbus.app.view.MapStopsFragment;
 import retrofit.RestAdapter;
@@ -18,11 +17,10 @@ import retrofit.client.OkClient;
 import javax.inject.Singleton;
 
 @Module(injects = {
-                BusStopActivity.class,
-                MapActivity.class,
-                MapStopsFragment.class
-        }
-)
+        MapActivity.class,
+        MapStopsFragment.class,
+        BusRoutesFragment.class
+})
 
 public class ApplicationModule {
 

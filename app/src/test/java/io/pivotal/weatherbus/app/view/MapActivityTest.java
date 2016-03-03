@@ -1,9 +1,8 @@
 package io.pivotal.weatherbus.app.view;
 
+import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
-import android.content.ComponentName;
-import android.content.Intent;
 import android.support.annotation.NonNull;
 import android.view.View;
 import android.widget.ImageButton;
@@ -19,7 +18,8 @@ import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 
@@ -29,26 +29,20 @@ import java.util.ArrayList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
-import static org.robolectric.Shadows.shadowOf;
 
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
 public class MapActivityTest {
     @Inject SavedStops favoriteStops;
 
-    @Mock MapStopsFragment fragment;
-    @Mock FragmentTransaction fragmentTransaction;
-
     MapActivity subject;
     StopForLocationResponse response;
+    BusRoutesFragment busRoutesFragment;
 
     @Before
     public void setUp() throws Exception {
         WeatherBusApplication.inject(this);
 
-        when(FakeMapActivity.fragmentManager.findFragmentById(eq(R.id.fragment_container))).thenReturn(fragment);
-        when(FakeMapActivity.fragmentManager.beginTransaction()).thenReturn(fragmentTransaction);
-        when(fragmentTransaction.add(eq(R.id.fragment_container), any(MapStopsFragment.class))).thenReturn(fragmentTransaction);
         subject = Robolectric.setupActivity(FakeMapActivity.class);
 
         response = new StopForLocationResponse() {{
@@ -67,8 +61,8 @@ public class MapActivityTest {
 
     @Test
     public void onCreate_shouldLoadMapStopsFragment() {
-        verify(fragmentTransaction).add(eq(R.id.fragment_container), any(MapStopsFragment.class));
-        verify(fragmentTransaction).commit();
+        verify(FakeMapActivity.fragmentTransaction).add(eq(R.id.fragment_container), any(MapStopsFragment.class), eq("mapFragment"));
+        verify(FakeMapActivity.fragmentTransaction).commit();
     }
 
     @Test
@@ -118,7 +112,7 @@ public class MapActivityTest {
         icon.performClick();
         verify(favoriteStops).addSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNotNull();
-        verify(fragment).setSelectedFavorite(true);
+        verify(FakeMapActivity.fragment).setSelectedFavorite(true);
 
         when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
             add("1_1234");
@@ -126,19 +120,30 @@ public class MapActivityTest {
         icon.performClick();
         verify(favoriteStops).deleteSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNull();
-        verify(fragment).setSelectedFavorite(false);
+        verify(FakeMapActivity.fragment).setSelectedFavorite(false);
     }
 
     @Test
     public void onToolbarTitleClick_shouldOpenBusStopActivity() {
         subject.onStopSelected(new BusStop(response.getStops().get(1)));
         TextView title = ButterKnife.findById(subject, R.id.toolbar_title);
+
+        when(FakeMapActivity.fragmentTransaction.replace(eq(R.id.fragment_container), any(BusRoutesFragment.class)))
+                .then(new Answer<FragmentTransaction>() {
+                    @Override
+                    public FragmentTransaction answer(InvocationOnMock invocation) throws Throwable {
+                        BusRoutesFragment fragment = (BusRoutesFragment) invocation.getArguments()[1];
+                        busRoutesFragment = fragment;
+                        return FakeMapActivity.fragmentTransaction;
+                    }
+                });
+
         title.performClick();
 
-        Intent intent = shadowOf(subject).peekNextStartedActivityForResult().intent;
-        assertThat(intent.getComponent()).isEqualTo(new ComponentName(subject, BusStopActivity.class));
-        assertThat(intent.getStringExtra("stopId")).isEqualTo("1_2234");
-        assertThat(intent.getStringExtra("stopName")).isEqualTo("STOP 1");
+        verify(FakeMapActivity.fragmentTransaction).replace(eq(R.id.fragment_container), any(BusRoutesFragment.class));
+        verify(FakeMapActivity.fragmentTransaction, times(2)).commit();
+        assertThat(busRoutesFragment.getArguments().getString("stopId")).isEqualTo("1_2234");
+        assertThat(busRoutesFragment.getArguments().getString("stopName")).isEqualTo("STOP 1");
     }
 
     @Test
@@ -154,6 +159,18 @@ public class MapActivityTest {
     public static class FakeMapActivity extends MapActivity {
 
         static FragmentManager fragmentManager = mock(FragmentManager.class);
+        static FragmentTransaction fragmentTransaction = mock(FragmentTransaction.class);
+        static MapStopsFragment fragment = mock(MapStopsFragment.class);
+
+        public FakeMapActivity() {
+            reset(fragmentManager);
+            reset(fragmentTransaction);
+            when(fragmentManager.beginTransaction()).thenReturn(fragmentTransaction);
+            when(fragmentManager.findFragmentByTag("mapFragment")).thenReturn(fragment);
+            when(fragmentTransaction.add(anyInt(), any(Fragment.class), anyString())).thenReturn(fragmentTransaction);
+            when(fragmentTransaction.replace(anyInt(), any(Fragment.class))).thenReturn(fragmentTransaction);
+            when(fragmentTransaction.addToBackStack(anyString())).thenReturn(fragmentTransaction);
+        }
 
         @NonNull
         @Override

@@ -5,7 +5,7 @@ import dagger.Provides;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
-import io.pivotal.weatherbus.app.view.BusStopActivityTest;
+import io.pivotal.weatherbus.app.view.BusRoutesFragmentTest;
 import io.pivotal.weatherbus.app.view.MapActivityTest;
 import io.pivotal.weatherbus.app.view.MapStopsFragmentTest;
 
@@ -17,11 +17,11 @@ import static org.mockito.Mockito.mock;
         overrides = true,
         library = true,
         injects = {
-                BusStopActivityTest.class,
                 MapActivityTest.class,
                 MapStopsFragmentTest.class,
                 MapActivityTest.FakeMapActivity.class,
-                MapStopsFragmentTest.MockActivity.class
+                MapStopsFragmentTest.MockActivity.class,
+                BusRoutesFragmentTest.class
         }
 )
 public class TestApplicationModule {
