@@ -132,7 +132,7 @@ public class MapStopsFragment extends Fragment {
 
         @Override
         public void onError(Throwable e) {
-            Toast.makeText(getContext(), "Failed to get stops near location!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), "Failed to get stops near location!", Toast.LENGTH_SHORT).show();
         }
 
         @Override
