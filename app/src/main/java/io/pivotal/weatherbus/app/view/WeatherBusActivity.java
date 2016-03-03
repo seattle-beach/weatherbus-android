@@ -18,7 +18,7 @@ import io.pivotal.weatherbus.app.model.BusStop;
 
 import javax.inject.Inject;
 
-public class MapActivity extends Activity implements MapStopsFragment.FragmentListener {
+public class WeatherBusActivity extends Activity implements MapStopsFragment.FragmentListener {
     @Bind(R.id.progress_bar) ProgressBar progressBar;
     @Bind(R.id.toolbar_title) TextView toolbarTitle;
     @Bind(R.id.bus_info) View toolbarInfo;

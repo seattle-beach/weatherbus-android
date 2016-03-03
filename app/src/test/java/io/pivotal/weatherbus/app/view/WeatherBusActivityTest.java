@@ -32,10 +32,10 @@ import static org.mockito.Mockito.*;
 
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
-public class MapActivityTest {
+public class WeatherBusActivityTest {
     @Inject SavedStops favoriteStops;
 
-    MapActivity subject;
+    WeatherBusActivity subject;
     StopForLocationResponse response;
     BusRoutesFragment busRoutesFragment;
 
@@ -43,7 +43,7 @@ public class MapActivityTest {
     public void setUp() throws Exception {
         WeatherBusApplication.inject(this);
 
-        subject = Robolectric.setupActivity(FakeMapActivity.class);
+        subject = Robolectric.setupActivity(FakeWeatherBusActivity.class);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
@@ -61,8 +61,8 @@ public class MapActivityTest {
 
     @Test
     public void onCreate_shouldLoadMapStopsFragment() {
-        verify(FakeMapActivity.fragmentTransaction).add(eq(R.id.fragment_container), any(MapStopsFragment.class), eq("mapFragment"));
-        verify(FakeMapActivity.fragmentTransaction).commit();
+        verify(FakeWeatherBusActivity.fragmentTransaction).add(eq(R.id.fragment_container), any(MapStopsFragment.class), eq("mapFragment"));
+        verify(FakeWeatherBusActivity.fragmentTransaction).commit();
     }
 
     @Test
@@ -112,7 +112,7 @@ public class MapActivityTest {
         icon.performClick();
         verify(favoriteStops).addSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNotNull();
-        verify(FakeMapActivity.fragment).setSelectedFavorite(true);
+        verify(FakeWeatherBusActivity.fragment).setSelectedFavorite(true);
 
         when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
             add("1_1234");
@@ -120,7 +120,7 @@ public class MapActivityTest {
         icon.performClick();
         verify(favoriteStops).deleteSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNull();
-        verify(FakeMapActivity.fragment).setSelectedFavorite(false);
+        verify(FakeWeatherBusActivity.fragment).setSelectedFavorite(false);
     }
 
     @Test
@@ -128,20 +128,20 @@ public class MapActivityTest {
         subject.onStopSelected(new BusStop(response.getStops().get(1)));
         TextView title = ButterKnife.findById(subject, R.id.toolbar_title);
 
-        when(FakeMapActivity.fragmentTransaction.replace(eq(R.id.fragment_container), any(BusRoutesFragment.class)))
+        when(FakeWeatherBusActivity.fragmentTransaction.replace(eq(R.id.fragment_container), any(BusRoutesFragment.class)))
                 .then(new Answer<FragmentTransaction>() {
                     @Override
                     public FragmentTransaction answer(InvocationOnMock invocation) throws Throwable {
                         BusRoutesFragment fragment = (BusRoutesFragment) invocation.getArguments()[1];
                         busRoutesFragment = fragment;
-                        return FakeMapActivity.fragmentTransaction;
+                        return FakeWeatherBusActivity.fragmentTransaction;
                     }
                 });
 
         title.performClick();
 
-        verify(FakeMapActivity.fragmentTransaction).replace(eq(R.id.fragment_container), any(BusRoutesFragment.class));
-        verify(FakeMapActivity.fragmentTransaction, times(2)).commit();
+        verify(FakeWeatherBusActivity.fragmentTransaction).replace(eq(R.id.fragment_container), any(BusRoutesFragment.class));
+        verify(FakeWeatherBusActivity.fragmentTransaction, times(2)).commit();
         assertThat(busRoutesFragment.getArguments().getString("stopId")).isEqualTo("1_2234");
         assertThat(busRoutesFragment.getArguments().getString("stopName")).isEqualTo("STOP 1");
     }
@@ -156,13 +156,13 @@ public class MapActivityTest {
         }
     }
 
-    public static class FakeMapActivity extends MapActivity {
+    public static class FakeWeatherBusActivity extends WeatherBusActivity {
 
         static FragmentManager fragmentManager = mock(FragmentManager.class);
         static FragmentTransaction fragmentTransaction = mock(FragmentTransaction.class);
         static MapStopsFragment fragment = mock(MapStopsFragment.class);
 
-        public FakeMapActivity() {
+        public FakeWeatherBusActivity() {
             reset(fragmentManager);
             reset(fragmentTransaction);
             when(fragmentManager.beginTransaction()).thenReturn(fragmentTransaction);

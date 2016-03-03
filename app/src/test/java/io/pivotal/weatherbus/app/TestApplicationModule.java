@@ -6,7 +6,7 @@ import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import io.pivotal.weatherbus.app.view.BusRoutesFragmentTest;
-import io.pivotal.weatherbus.app.view.MapActivityTest;
+import io.pivotal.weatherbus.app.view.WeatherBusActivityTest;
 import io.pivotal.weatherbus.app.view.MapStopsFragmentTest;
 
 import javax.inject.Singleton;
@@ -17,10 +17,9 @@ import static org.mockito.Mockito.mock;
         overrides = true,
         library = true,
         injects = {
-                MapActivityTest.class,
+                WeatherBusActivityTest.class,
                 MapStopsFragmentTest.class,
-                MapActivityTest.FakeMapActivity.class,
-                MapStopsFragmentTest.MockActivity.class,
+                WeatherBusActivityTest.FakeWeatherBusActivity.class,
                 BusRoutesFragmentTest.class
         }
 )

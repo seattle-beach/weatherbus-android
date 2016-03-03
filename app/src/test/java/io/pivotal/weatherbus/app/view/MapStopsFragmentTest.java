@@ -96,7 +96,7 @@ public class MapStopsFragmentTest {
         when(location.getLatitude()).thenReturn(5.0);
         when(location.getLongitude()).thenReturn(5.0);
 
-        when(locationRepository.fetch(any(MapActivity.class))).thenReturn(locationEmitter);
+        when(locationRepository.fetch(any(WeatherBusActivity.class))).thenReturn(locationEmitter);
         when(weatherBusMapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
         when(weatherBusMapRepository.getOnMarkerClickObservable(any(MapFragmentAdapter.class))).thenReturn(markerClick);
         when(weatherBusMapRepository.getOnInfoWindowClickObservable(any(MapFragmentAdapter.class))).thenReturn(infoWindowClick);

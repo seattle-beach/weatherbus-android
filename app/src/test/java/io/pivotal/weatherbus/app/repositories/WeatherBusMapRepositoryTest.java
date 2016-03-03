@@ -9,7 +9,7 @@ import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
-import io.pivotal.weatherbus.app.view.MapActivity;
+import io.pivotal.weatherbus.app.view.WeatherBusActivity;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,7 +37,7 @@ public class WeatherBusMapRepositoryTest {
     WeatherBusMap weatherbusMap;
 
     @Mock
-    MapActivity mapActivity;
+    WeatherBusActivity weatherBusActivity;
 
     @Mock
     Location location;
