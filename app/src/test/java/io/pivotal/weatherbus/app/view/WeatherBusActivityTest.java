@@ -18,10 +18,13 @@ import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
+import org.robolectric.util.ActivityController;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -34,16 +37,19 @@ import static org.mockito.Mockito.*;
 @Config(constants = BuildConfig.class)
 public class WeatherBusActivityTest {
     @Inject SavedStops favoriteStops;
+    @Mock MapStopsFragment mapStopsFragment;
+    @Mock BusRoutesFragment busRoutesFragment;
 
-    WeatherBusActivity subject;
     StopForLocationResponse response;
-    BusRoutesFragment busRoutesFragment;
+
+    @InjectMocks
+    FakeWeatherBusActivity subject;
 
     @Before
     public void setUp() throws Exception {
         WeatherBusApplication.inject(this);
 
-        subject = Robolectric.setupActivity(FakeWeatherBusActivity.class);
+        subject = ActivityController.of(Robolectric.getShadowsAdapter(), subject).setup().get();
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
@@ -60,8 +66,16 @@ public class WeatherBusActivityTest {
     }
 
     @Test
+    public void onCreate_shouldLoadAndHideBusRouteFragment() {
+        verify(FakeWeatherBusActivity.fragmentTransaction).add(R.id.fragment_container, busRoutesFragment);
+        verify(FakeWeatherBusActivity.fragmentTransaction).hide(busRoutesFragment);
+        verify(FakeWeatherBusActivity.fragmentTransaction).commit();
+    }
+
+    @Test
     public void onCreate_shouldLoadMapStopsFragment() {
-        verify(FakeWeatherBusActivity.fragmentTransaction).add(eq(R.id.fragment_container), any(MapStopsFragment.class), eq("mapFragment"));
+        verify(FakeWeatherBusActivity.fragmentTransaction).add(R.id.fragment_container, mapStopsFragment);
+        verify(FakeWeatherBusActivity.fragmentTransaction, never()).hide(mapStopsFragment);
         verify(FakeWeatherBusActivity.fragmentTransaction).commit();
     }
 
@@ -112,7 +126,7 @@ public class WeatherBusActivityTest {
         icon.performClick();
         verify(favoriteStops).addSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNotNull();
-        verify(FakeWeatherBusActivity.fragment).setSelectedFavorite(true);
+        verify(mapStopsFragment).setSelectedFavorite(true);
 
         when(favoriteStops.getSavedStops()).thenReturn(new ArrayList<String>() {{
             add("1_1234");
@@ -120,30 +134,23 @@ public class WeatherBusActivityTest {
         icon.performClick();
         verify(favoriteStops).deleteSavedStop("1_1234");
         assertThat(icon.getColorFilter()).isNull();
-        verify(FakeWeatherBusActivity.fragment).setSelectedFavorite(false);
+        verify(mapStopsFragment).setSelectedFavorite(false);
     }
 
     @Test
-    public void onToolbarTitleClick_shouldOpenBusStopActivity() {
+    public void onToolbarTitleClick_shouldShowRouteFragmentAndHideMapFragment() {
         subject.onStopSelected(new BusStop(response.getStops().get(1)));
         TextView title = ButterKnife.findById(subject, R.id.toolbar_title);
 
-        when(FakeWeatherBusActivity.fragmentTransaction.replace(eq(R.id.fragment_container), any(BusRoutesFragment.class)))
-                .then(new Answer<FragmentTransaction>() {
-                    @Override
-                    public FragmentTransaction answer(InvocationOnMock invocation) throws Throwable {
-                        BusRoutesFragment fragment = (BusRoutesFragment) invocation.getArguments()[1];
-                        busRoutesFragment = fragment;
-                        return FakeWeatherBusActivity.fragmentTransaction;
-                    }
-                });
-
         title.performClick();
 
-        verify(FakeWeatherBusActivity.fragmentTransaction).replace(eq(R.id.fragment_container), any(BusRoutesFragment.class));
+        verify(busRoutesFragment).setStopId("1_2234");
+        verify(FakeWeatherBusActivity.fragmentTransaction).hide(mapStopsFragment);
+        verify(FakeWeatherBusActivity.fragmentTransaction).show(busRoutesFragment);
+        verify(FakeWeatherBusActivity.fragmentTransaction).
+                setCustomAnimations(R.animator.card_flip_right_in, R.animator.card_flip_right_out,
+                                    R.animator.card_flip_left_in, R.animator.card_flip_left_out);
         verify(FakeWeatherBusActivity.fragmentTransaction, times(2)).commit();
-        assertThat(busRoutesFragment.getArguments().getString("stopId")).isEqualTo("1_2234");
-        assertThat(busRoutesFragment.getArguments().getString("stopName")).isEqualTo("STOP 1");
     }
 
     @Test
@@ -160,16 +167,18 @@ public class WeatherBusActivityTest {
 
         static FragmentManager fragmentManager = mock(FragmentManager.class);
         static FragmentTransaction fragmentTransaction = mock(FragmentTransaction.class);
-        static MapStopsFragment fragment = mock(MapStopsFragment.class);
 
         public FakeWeatherBusActivity() {
             reset(fragmentManager);
             reset(fragmentTransaction);
             when(fragmentManager.beginTransaction()).thenReturn(fragmentTransaction);
-            when(fragmentManager.findFragmentByTag("mapFragment")).thenReturn(fragment);
             when(fragmentTransaction.add(anyInt(), any(Fragment.class), anyString())).thenReturn(fragmentTransaction);
+            when(fragmentTransaction.add(anyInt(), any(Fragment.class))).thenReturn(fragmentTransaction);
+            when(fragmentTransaction.hide(any(Fragment.class))).thenReturn(fragmentTransaction);
+            when(fragmentTransaction.show(any(Fragment.class))).thenReturn(fragmentTransaction);
             when(fragmentTransaction.replace(anyInt(), any(Fragment.class))).thenReturn(fragmentTransaction);
             when(fragmentTransaction.addToBackStack(anyString())).thenReturn(fragmentTransaction);
+            when(fragmentTransaction.setCustomAnimations(anyInt(), anyInt(), anyInt(), anyInt())).thenReturn(fragmentTransaction);
         }
 
         @NonNull

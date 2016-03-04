@@ -49,10 +49,8 @@ public class BusRoutesFragmentTest {
 
         when(service.getStopInformation(stopId)).thenReturn(stopResponseEmitter);
         subject = new BusRoutesFragment();
-        Bundle args = new Bundle();
-        args.putString("stopId", stopId);
-        subject.setArguments(args);
         FragmentTestUtil.startFragment(subject);
+        subject.setStopId(stopId);
 
         assertThat(subject.getView()).isNotNull();
         busList = ButterKnife.findById(subject.getView(), R.id.busList);

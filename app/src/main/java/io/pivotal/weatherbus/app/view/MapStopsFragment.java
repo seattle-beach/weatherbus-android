@@ -210,9 +210,4 @@ public class MapStopsFragment extends Fragment {
         }
         return null;
     }
-
-    public interface FragmentListener {
-        void onStopsLoaded();
-        void onStopSelected(BusStop busStop);
-    }
 }

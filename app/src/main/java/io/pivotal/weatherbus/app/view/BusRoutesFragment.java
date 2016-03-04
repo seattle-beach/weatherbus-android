@@ -35,8 +35,7 @@ public class BusRoutesFragment extends Fragment {
     @Bind(R.id.busList) ListView busList;
     @Bind(R.id.emptyRouteMessage) TextView message;
 
-    String stopName;
-    String stopId;
+    private String stopId = "";
 
     BusRouteAdapter adapter;
 
@@ -48,8 +47,33 @@ public class BusRoutesFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         WeatherBusApplication.inject(this);
+    }
 
-        stopId = getArguments().getString("stopId");
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_bus_routes, container, false);
+        ButterKnife.bind(this, view);
+        adapter = new BusRouteAdapter(getActivity());
+        busList.setAdapter(adapter);
+        return view;
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        ButterKnife.unbind(this);
+    }
+
+    public void setStopId(String stopId) {
+        if(!this.stopId.equals(stopId)) {
+            adapter.clear();
+            this.stopId = stopId;
+            showDepartures();
+        }
+    }
+
+    private void showDepartures() {
         service.getStopInformation(stopId)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -78,23 +102,8 @@ public class BusRoutesFragment extends Fragment {
                                     departure.getTemp());
                             adapter.add(busRoute);
                         }
+                        adapter.notifyDataSetChanged();
                     }
                 });
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_bus_routes, container, false);
-        ButterKnife.bind(this, view);
-        adapter = new BusRouteAdapter(getActivity());
-        busList.setAdapter(adapter);
-        return view;
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        ButterKnife.unbind(this);
     }
 }

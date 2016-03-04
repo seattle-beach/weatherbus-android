@@ -248,7 +248,7 @@ public class MapStopsFragmentTest {
         }
     }
 
-    public static class MockActivity extends Activity implements MapStopsFragment.FragmentListener {
+    public static class MockActivity extends Activity implements FragmentListener {
         boolean stopsLoaded = false;
         BusStop selectedStop = null;
 

@@ -18,7 +18,7 @@ import io.pivotal.weatherbus.app.model.BusStop;
 
 import javax.inject.Inject;
 
-public class WeatherBusActivity extends Activity implements MapStopsFragment.FragmentListener {
+public class WeatherBusActivity extends Activity implements FragmentListener {
     @Bind(R.id.progress_bar) ProgressBar progressBar;
     @Bind(R.id.toolbar_title) TextView toolbarTitle;
     @Bind(R.id.bus_info) View toolbarInfo;
@@ -26,7 +26,10 @@ public class WeatherBusActivity extends Activity implements MapStopsFragment.Fra
 
     @Inject SavedStops favoriteStops;
 
-    BusStop selectedStop;
+    private MapStopsFragment mapStopsFragment = new MapStopsFragment();
+    private BusRoutesFragment busRoutesFragment= new BusRoutesFragment();
+
+    private BusStop selectedStop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +43,12 @@ public class WeatherBusActivity extends Activity implements MapStopsFragment.Fra
             return;
         }
 
-        MapStopsFragment mapStopsFragment = new MapStopsFragment();
-        getFragmentManager().beginTransaction()
-                .add(R.id.fragment_container, mapStopsFragment, "mapFragment").commit();
+        getFragmentManager()
+                .beginTransaction()
+                .add(R.id.fragment_container, busRoutesFragment)
+                .hide(busRoutesFragment)
+                .add(R.id.fragment_container, mapStopsFragment)
+                .commit();
     }
 
     @Override
@@ -67,14 +73,13 @@ public class WeatherBusActivity extends Activity implements MapStopsFragment.Fra
     @OnClick(R.id.toolbar_title)
     public void inflateStop() {
         if(selectedStop != null) {
-            BusRoutesFragment busRoutesFragment = new BusRoutesFragment();
-            Bundle args = new Bundle();
-            args.putString("stopId", selectedStop.getId());
-            args.putString("stopName", selectedStop.getName());
-            busRoutesFragment.setArguments(args);
+            busRoutesFragment.setStopId(selectedStop.getId());
             getFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.fragment_container, busRoutesFragment)
+                    .setCustomAnimations(R.animator.card_flip_right_in, R.animator.card_flip_right_out,
+                            R.animator.card_flip_left_in, R.animator.card_flip_left_out)
+                    .hide(mapStopsFragment)
+                    .show(busRoutesFragment)
                     .addToBackStack(null)
                     .commit();
         }
@@ -84,11 +89,11 @@ public class WeatherBusActivity extends Activity implements MapStopsFragment.Fra
     public void toggleFavorite() {
         if (selectedStop != null) {
             if (favoriteStops.getSavedStops().contains(selectedStop.getId())) {
-                ((MapStopsFragment) getFragmentManager().findFragmentByTag("mapFragment")).setSelectedFavorite(false);
+                mapStopsFragment.setSelectedFavorite(false);
                 favoriteStops.deleteSavedStop(selectedStop.getId());
                 favoriteButton.setColorFilter(null);
             } else {
-                ((MapStopsFragment) getFragmentManager().findFragmentByTag("mapFragment")).setSelectedFavorite(true);
+                mapStopsFragment.setSelectedFavorite(true);
                 favoriteStops.addSavedStop(selectedStop.getId());
                 favoriteButton.setColorFilter(ContextCompat.getColor(this,android.R.color.holo_red_dark));
             }
