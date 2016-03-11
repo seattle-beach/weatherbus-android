@@ -12,5 +12,5 @@ public interface IRetrofitWeatherBusService {
                                                                   @Query("latSpan") double latSpan,
                                                                   @Query("lngSpan") double lngSpan);
     @GET("/api/v1/stops/{stop}")
-    Observable<StopResponse> getStopInformation(@Path("stop") String stopId);
+    Observable<StopResponse> getDepartures(@Path("stop") String stopId);
 }

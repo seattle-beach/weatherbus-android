@@ -17,6 +17,6 @@ public class WeatherBusService {
     }
 
     public Observable<StopResponse> getStopInformation(String stopId) {
-        return weatherBusService.getStopInformation(stopId);
+        return weatherBusService.getDepartures(stopId);
     }
 }
