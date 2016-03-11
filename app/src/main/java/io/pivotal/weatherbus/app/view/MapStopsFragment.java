@@ -98,7 +98,7 @@ public class MapStopsFragment extends Fragment {
                 .rotateGesturesEnabled(false)
                 .tiltGesturesEnabled(false)
                 .camera(new CameraPosition.Builder()
-                        .zoom(15)
+                        .zoom(16)
                         .target(new LatLng(47.5989625,-122.3359992))
                         .build()));
 
@@ -194,25 +194,20 @@ public class MapStopsFragment extends Fragment {
             }
             List<String> favoriteStops = MapStopsFragment.this.favoriteStops.getSavedStops();
             for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
-                BusStop busStop;
-                WeatherBusMarker marker;
-                if (selectedStop != null && selectedStop.getId().equals(stopResponse.getId())) {
-                    busStop = selectedStop;
-                    marker = selectedMarker;
-                } else {
-                    busStop = new BusStop(stopResponse);
+                if ((selectedStop == null || !selectedStop.getId().equals(stopResponse.getId()))) {
+                    BusStop busStop = new BusStop(stopResponse);
                     String title = createLabelTitle(busStop);
                     String snippet = createLabelSnippet(busStop, routeNames);
                     boolean isFavorite = favoriteStops.contains(stopResponse.getId());
                     busStop.setFavorite(isFavorite);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                    marker = weatherBusMap.addMarker(new MarkerOptions()
+                    WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
                             .position(stopPosition)
                             .title(title));
                     marker.setSnippet(snippet);
                     marker.setFavorite(isFavorite);
+                    busStopMarkers.put(busStop,marker);
                 }
-                busStopMarkers.put(busStop,marker);
             }
             ((FragmentListener) getActivity()).onStopsLoaded();
         }
