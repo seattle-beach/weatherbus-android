@@ -43,11 +43,11 @@ import static org.mockito.Mockito.*;
 @Config(constants = BuildConfig.class)
 public class MapStopsFragmentTest {
 
-    @Inject
-    WeatherBusService service;
+    @Inject WeatherBusService service;
     @Inject WeatherBusMapRepository weatherBusMapRepository;
     @Inject LocationRepository locationRepository;
     @Inject SavedStops favoriteStops;
+    @Inject InfoContentsAdapter infoContentsAdapter;
 
     @Mock WeatherBusMap weatherBusMap;
     @Mock WeatherBusMarker markerZero;
@@ -103,23 +103,42 @@ public class MapStopsFragmentTest {
         when(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 2.0, 2.0)).thenReturn(stopEmitter);
         when(weatherBusMapRepository.getOnCameraChangeObservable(any(MapFragmentAdapter.class))).thenReturn(cameraChange);
 
-
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse("1_1234", "STOP 0", "S", 4.2 , 4.3));
-                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4 , 4.5));
+                add(new BusStopResponse("1_1234", "STOP 0", "S", 4.2 , 4.3, new ArrayList<String>() {{
+                    add("route_0");
+                    add("route_1");
+                }}));
+                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4 , 4.5, new ArrayList<String>() {{
+                    add("route_1");
+                    add("route_2");
+                }}));
             }});
+
+            setIncluded(new BusStopReference(new ArrayList<BusStopReference.RouteReference>() {{
+                add(new BusStopReference.RouteReference("route_0", "THIS IS MY 0 ROUTE", "0"));
+                add(new BusStopReference.RouteReference("route_1", "THIS IS MY 1 ROUTE", ""));
+                add(new BusStopReference.RouteReference("route_2", "", ""));
+            }}));
         }};
         subject = new MapStopsFragment();
         FragmentTestUtil.startFragment(subject, MockActivity.class);
     }
 
     @Test
-    public void onNextMapAndLocation_shouldCenterMapAndEnableLocation() {
+    public void onNextMap_shouldSetupMap() {
+        mapEmitter.onNext(weatherBusMap);
+        verify(weatherBusMap).setMyLocationEnabled(true);
+        verify(infoContentsAdapter).setContext(subject.getActivity());
+        verify(weatherBusMap).setInfoWindowAdapter(infoContentsAdapter);
+    }
+
+    @Test
+    public void onNextMapAndLocation_shouldCenterMap() {
         mapEmitter.onNext(weatherBusMap);
         locationEmitter.onNext(location);
         locationEmitter.onCompleted();
-        verify(weatherBusMap).setMyLocationEnabled(true);
+
         verify(weatherBusMap).moveCamera(new LatLng(location.getLatitude(),location.getLatitude()));
         verify(service).getStopsForLocation(location.getLatitude(), location.getLatitude(), 2.0, 2.0);
     }
@@ -128,6 +147,8 @@ public class MapStopsFragmentTest {
     public void onNextMapAndLocationAndStops_shouldAddMarkersToMap() {
         fulfillRequests();
         verify(weatherBusMap, times(2)).addMarker(any(MarkerOptions.class));
+        verify(markerZero).setSnippet("Routes: 0, THIS IS MY 1 ROUTE");
+        verify(markerOne).setSnippet("Routes: THIS IS MY 1 ROUTE, route_2");
     }
 
     @Test
@@ -227,24 +248,25 @@ public class MapStopsFragmentTest {
         cameraChange.onNext(new LatLngBounds(new LatLng(10, 10), new LatLng(20, 20)));
         StopForLocationResponse response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4, 4.5));
-                add(new BusStopResponse("2_2234", "STOP 2", "", 2.2, 2.3));
-                add(new BusStopResponse("3_2234", "STOP 3", "W", 3.2, 3.3));
+                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4, 4.5, new ArrayList<String>()));
+                add(new BusStopResponse("2_2234", "STOP 2", "", 2.2, 2.3, new ArrayList<String>()));
+                add(new BusStopResponse("3_2234", "STOP 3", "W", 3.2, 3.3, new ArrayList<String>()));
             }});
+            setIncluded(new BusStopReference(new ArrayList<BusStopReference.RouteReference>()));
         }};
 
         newStopEmitter.onNext(response);
     }
 
     private class MatchesTitle extends ArgumentMatcher<MarkerOptions> {
-        String name;
-        public MatchesTitle(String name) {
-            this.name = name;
+        String title;
+        public MatchesTitle(String title) {
+            this.title = title;
         }
         @Override
         public boolean matches(Object argument) {
             if(argument == null) return false;
-            return ((MarkerOptions) argument).getTitle().equals(name);
+            return ((MarkerOptions) argument).getTitle().equals(title);
         }
     }
 

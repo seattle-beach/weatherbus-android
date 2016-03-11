@@ -13,15 +13,12 @@ import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
 import io.pivotal.weatherbus.app.model.BusStop;
-import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
 import org.robolectric.util.ActivityController;
@@ -40,7 +37,8 @@ public class WeatherBusActivityTest {
     @Mock MapStopsFragment mapStopsFragment;
     @Mock BusRoutesFragment busRoutesFragment;
 
-    StopForLocationResponse response;
+    BusStop busStopZero;
+    BusStop busStopOne;
 
     @InjectMocks
     FakeWeatherBusActivity subject;
@@ -51,12 +49,8 @@ public class WeatherBusActivityTest {
 
         subject = ActivityController.of(Robolectric.getShadowsAdapter(), subject).setup().get();
 
-        response = new StopForLocationResponse() {{
-            setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse("1_1234", "STOP 0", "S", 4.2 , 4.3));
-                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4 , 4.5));
-            }});
-        }};
+        busStopZero = new BusStop("1_1234", "STOP 0", "S", 4.2 , 4.3, new ArrayList<String>());
+        busStopOne = new BusStop("1_2234", "STOP 1", "NW", 4.4 , 4.5, new ArrayList<String>());
     }
 
     @Test
@@ -94,7 +88,7 @@ public class WeatherBusActivityTest {
 
     @Test
     public void onStopSelected_shouldDisplayNameInToolbar() {
-        subject.onStopSelected(new BusStop(response.getStops().get(0)));
+        subject.onStopSelected(busStopZero);
 
         TextView textView = ButterKnife.findById(subject, R.id.toolbar_title);
         assertThat(textView.getText().toString()).isEqualTo("STOP 0 (S)");
@@ -107,20 +101,20 @@ public class WeatherBusActivityTest {
             add("1_1234");
         }});
 
-        subject.onStopSelected(new BusStop(response.getStops().get(0)));
+        subject.onStopSelected(busStopZero);
 
         ImageButton icon = ButterKnife.findById(subject, R.id.toolbar_favorite_button);
 
         assertThat(icon.getVisibility()).isEqualTo(View.VISIBLE);
         assertThat(icon.getColorFilter()).isNotNull();
 
-        subject.onStopSelected(new BusStop(response.getStops().get(1)));
+        subject.onStopSelected(busStopOne);
         assertThat(icon.getColorFilter()).isNull();
     }
 
     @Test
     public void onFavoriteClick_shouldToggleFavorite() {
-        subject.onStopSelected(new BusStop(response.getStops().get(0)));
+        subject.onStopSelected(busStopZero);
         ImageButton icon = ButterKnife.findById(subject, R.id.toolbar_favorite_button);
 
         icon.performClick();
@@ -139,7 +133,7 @@ public class WeatherBusActivityTest {
 
     @Test
     public void onToolbarTitleClick_shouldShowRouteFragmentAndHideMapFragment() {
-        subject.onStopSelected(new BusStop(response.getStops().get(1)));
+        subject.onStopSelected(busStopOne);
         TextView title = ButterKnife.findById(subject, R.id.toolbar_title);
 
         title.performClick();

@@ -1,6 +1,5 @@
 package io.pivotal.weatherbus.app.view;
 
-import android.os.Bundle;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.TextView;

@@ -9,8 +9,9 @@ import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import io.pivotal.weatherbus.app.view.BusRoutesFragment;
-import io.pivotal.weatherbus.app.view.WeatherBusActivity;
+import io.pivotal.weatherbus.app.view.InfoContentsAdapter;
 import io.pivotal.weatherbus.app.view.MapStopsFragment;
+import io.pivotal.weatherbus.app.view.WeatherBusActivity;
 import retrofit.RestAdapter;
 import retrofit.client.OkClient;
 
@@ -71,5 +72,10 @@ public class ApplicationModule {
     @Singleton
     SavedStops getSavedStops(SharedPreferences settings) {
         return new SavedStops(settings);
+    }
+
+    @Provides
+    InfoContentsAdapter getInfoContentsAdapter() {
+        return new InfoContentsAdapter();
     }
 }

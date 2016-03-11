@@ -26,7 +26,20 @@ public class WeatherBusMarker {
     public String getId() {
         return marker.getId();
     }
+
     public String getTitle() {
         return marker.getTitle();
+    }
+
+    public String getSnippet() {
+        return marker.getSnippet();
+    }
+
+    public void setTitle(String title) {
+        marker.setTitle(title);
+    }
+
+    public void setSnippet(String snippet) {
+        marker.setSnippet(snippet);
     }
 }

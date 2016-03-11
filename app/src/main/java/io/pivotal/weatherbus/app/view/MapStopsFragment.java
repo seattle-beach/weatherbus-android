@@ -14,6 +14,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.common.base.Joiner;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
@@ -35,6 +36,7 @@ import rx.schedulers.Schedulers;
 import rx.subscriptions.CompositeSubscription;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,7 @@ public class MapStopsFragment extends Fragment {
     @Inject LocationRepository locationRepository;
     @Inject SavedStops favoriteStops;
     @Inject WeatherBusService service;
+    @Inject InfoContentsAdapter infoContentsAdapter;
 
     private MapFragmentAdapter mapFragmentAdapter;
     private MapFragment mapFragment;
@@ -51,7 +54,7 @@ public class MapStopsFragment extends Fragment {
     private BusStop selectedStop;
     private WeatherBusMap weatherBusMap;
     private Map<BusStop, WeatherBusMarker> busStopMarkers;
-    private View view;
+    private View fragmentView;
 
     public MapStopsFragment() {
         // Required empty public constructor
@@ -72,14 +75,15 @@ public class MapStopsFragment extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        if (view == null) {
-            view = inflater.inflate(R.layout.fragment_map_stops, container, false);
+        if (fragmentView == null) {
+            fragmentView = inflater.inflate(R.layout.fragment_map_stops, container, false);
+            infoContentsAdapter.setContext(getActivity());
             getChildFragmentManager()
                     .beginTransaction()
                     .add(R.id.mapContainer, mapFragment)
                     .commit();
         }
-        return view;
+        return fragmentView;
     }
 
     @Override
@@ -111,10 +115,20 @@ public class MapStopsFragment extends Fragment {
                 .subscribe(new OnNextMarkerClick()));
 
         subscriptions.add(weatherBusMapRepository.getOnMapReadyObservable(mapFragmentAdapter)
-                .doOnNext(new Action1<WeatherBusMap>() {
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<WeatherBusMap>() {
                     @Override
                     public void call(WeatherBusMap weatherBusMap) {
                         weatherBusMap.setMyLocationEnabled(true);
+                        weatherBusMap.setInfoWindowAdapter(infoContentsAdapter);
+                    }
+                }));
+
+        subscriptions.add(weatherBusMapRepository.getOnMapReadyObservable(mapFragmentAdapter)
+                .doOnNext(new Action1<WeatherBusMap>() {
+                    @Override
+                    public void call(WeatherBusMap weatherBusMap) {
                         MapStopsFragment.this.weatherBusMap = weatherBusMap;
                     }
                 }).zipWith(locationRepository.fetch(getActivity()), new Func2<WeatherBusMap, Location, LatLngBounds>() {
@@ -154,6 +168,20 @@ public class MapStopsFragment extends Fragment {
 
         @Override
         public void onNext(StopForLocationResponse stopForLocationResponse) {
+            Map<String, String> routeNames = new HashMap<>();
+            for(StopForLocationResponse.BusStopReference.RouteReference route : stopForLocationResponse.getIncluded().getRoutes()) {
+                String name;
+                if (!route.getShortName().isEmpty()) {
+                    name = route.getShortName();
+                } else if (!route.getLongName().isEmpty()) {
+                    name = route.getLongName();
+                } else {
+                    name = route.getId();
+                }
+                routeNames.put(route.getId(), name);
+            }
+
+
             WeatherBusMarker selectedMarker = busStopMarkers.get(selectedStop);
             for (WeatherBusMarker marker : busStopMarkers.values()) {
                 if (marker != selectedMarker) {
@@ -173,21 +201,36 @@ public class MapStopsFragment extends Fragment {
                     marker = selectedMarker;
                 } else {
                     busStop = new BusStop(stopResponse);
-                    String title = busStop.getName();
-                    if (!busStop.getDirection().isEmpty()) {
-                        title += " (" + busStop.getDirection() + ")";
-                    }
+                    String title = createLabelTitle(busStop);
+                    String snippet = createLabelSnippet(busStop, routeNames);
                     boolean isFavorite = favoriteStops.contains(stopResponse.getId());
                     busStop.setFavorite(isFavorite);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
                     marker = weatherBusMap.addMarker(new MarkerOptions()
                             .position(stopPosition)
                             .title(title));
+                    marker.setSnippet(snippet);
                     marker.setFavorite(isFavorite);
                 }
                 busStopMarkers.put(busStop,marker);
             }
             ((FragmentListener) getActivity()).onStopsLoaded();
+        }
+
+        private String createLabelSnippet(BusStop busStop, Map<String, String> routeNames) {
+            List<String> routes = new ArrayList<>();
+            for (String routeId : busStop.getRouteIds()) {
+                routes.add(routeNames.get(routeId));
+            }
+            return "Routes: " + Joiner.on(", ").join(routes);
+        }
+
+        private String createLabelTitle(BusStop busStop) {
+            String title = busStop.getName();
+            if (!busStop.getDirection().isEmpty()) {
+                title += " (" + busStop.getDirection() + ")";
+            }
+            return title;
         }
     }
 

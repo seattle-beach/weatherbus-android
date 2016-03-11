@@ -6,8 +6,9 @@ import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import io.pivotal.weatherbus.app.view.BusRoutesFragmentTest;
-import io.pivotal.weatherbus.app.view.WeatherBusActivityTest;
+import io.pivotal.weatherbus.app.view.InfoContentsAdapter;
 import io.pivotal.weatherbus.app.view.MapStopsFragmentTest;
+import io.pivotal.weatherbus.app.view.WeatherBusActivityTest;
 
 import javax.inject.Singleton;
 
@@ -46,5 +47,11 @@ public class TestApplicationModule {
     @Singleton
     SavedStops getSavedStops() {
         return mock(SavedStops.class);
+    }
+
+    @Provides
+    @Singleton
+    InfoContentsAdapter getInfoContentsAdapter() {
+        return mock(InfoContentsAdapter.class);
     }
 }
