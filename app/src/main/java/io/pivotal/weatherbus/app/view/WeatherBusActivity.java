@@ -34,7 +34,7 @@ public class WeatherBusActivity extends Activity implements FragmentListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_map);
+        setContentView(R.layout.activity_weatherbus);
         ButterKnife.bind(this);
         WeatherBusApplication.inject(this);
         toolbarTitle.setText("SELECT A BUS STOP");
