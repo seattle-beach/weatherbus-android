@@ -64,10 +64,10 @@ public class WeatherBusMapRepositoryTest {
     public void getOnMarkerClick_shouldEmitMarker_ifMarkerIsClicked() {
         final WeatherBusMarker marker = mock(WeatherBusMarker.class);
 
-        when(weatherbusMap.setOnMarkerClickListener(any(WeatherBusMap.OnWeatherBusMarkerClick.class))).then(new Answer<Void>() {
+        when(weatherbusMap.setOnMarkerClickListener(any(WeatherBusMap.OnMarkerClickListener.class))).then(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
-                WeatherBusMap.OnWeatherBusMarkerClick listener = (WeatherBusMap.OnWeatherBusMarkerClick) invocation.getArguments()[0];
+                WeatherBusMap.OnMarkerClickListener listener = (WeatherBusMap.OnMarkerClickListener) invocation.getArguments()[0];
                 listener.onMarkerClick(marker);
                 return null;
             }
@@ -85,10 +85,10 @@ public class WeatherBusMapRepositoryTest {
     public void getOnInfoWindowClick_shouldEmitMarker() {
         final WeatherBusMarker marker = mock(WeatherBusMarker.class);
 
-        when(weatherbusMap.setOnInfoWindowClickListener(any(WeatherBusMap.OnWeatherBusInfoClickListener.class))).then(new Answer<Void>() {
+        when(weatherbusMap.setOnInfoWindowClickListener(any(WeatherBusMap.OnInfoWindowClickListener.class))).then(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
-                WeatherBusMap.OnWeatherBusInfoClickListener listener = (WeatherBusMap.OnWeatherBusInfoClickListener) invocation.getArguments()[0];
+                WeatherBusMap.OnInfoWindowClickListener listener = (WeatherBusMap.OnInfoWindowClickListener) invocation.getArguments()[0];
                 listener.onInfoWindowClick(marker);
                 return null;
             }
@@ -107,10 +107,10 @@ public class WeatherBusMapRepositoryTest {
         final LatLngBounds latLngBounds = new LatLngBounds(new LatLng(5,2), new LatLng(10,11));
         final CameraPosition cameraPosition = new CameraPosition(new LatLng(3,3), 5.0f, 40, 40);
 
-        when(weatherbusMap.setOnCameraChangeListener(any(WeatherBusMap.OnWeatherBusCameraChangeListener.class))).then(new Answer<Void>() {
+        when(weatherbusMap.setOnCameraChangeListener(any(WeatherBusMap.OnCameraChangeListener.class))).then(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocation) throws Throwable {
-                WeatherBusMap.OnWeatherBusCameraChangeListener listener = (WeatherBusMap.OnWeatherBusCameraChangeListener) invocation.getArguments()[0];
+                WeatherBusMap.OnCameraChangeListener listener = (WeatherBusMap.OnCameraChangeListener) invocation.getArguments()[0];
                 listener.onCameraChange(cameraPosition);
                 return null;
             }

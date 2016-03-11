@@ -73,7 +73,7 @@ public class WeatherBusMapRepository {
             return Observable.create(new Observable.OnSubscribe<WeatherBusMarker>() {
                 @Override
                 public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
-                    weatherBusMap.setOnMarkerClickListener(new WeatherBusMap.OnWeatherBusMarkerClick() {
+                    weatherBusMap.setOnMarkerClickListener(new WeatherBusMap.OnMarkerClickListener() {
                         @Override
                         public boolean onMarkerClick(WeatherBusMarker marker) {
                             subscriber.onNext(marker);
@@ -91,7 +91,7 @@ public class WeatherBusMapRepository {
             return Observable.create((new Observable.OnSubscribe<WeatherBusMarker>() {
                 @Override
                 public void call(final Subscriber<? super WeatherBusMarker> subscriber) {
-                    weatherBusMap.setOnInfoWindowClickListener(new WeatherBusMap.OnWeatherBusInfoClickListener() {
+                    weatherBusMap.setOnInfoWindowClickListener(new WeatherBusMap.OnInfoWindowClickListener() {
                         @Override
                         public void onInfoWindowClick(WeatherBusMarker marker) {
                             subscriber.onNext(marker);
@@ -108,7 +108,7 @@ public class WeatherBusMapRepository {
             return Observable.create(new Observable.OnSubscribe<LatLngBounds>() {
                 @Override
                 public void call(final Subscriber<? super LatLngBounds> subscriber) {
-                    weatherBusMap.setOnCameraChangeListener(new WeatherBusMap.OnWeatherBusCameraChangeListener() {
+                    weatherBusMap.setOnCameraChangeListener(new WeatherBusMap.OnCameraChangeListener() {
                         @Override
                         public void onCameraChange(CameraPosition position) {
                             subscriber.onNext(weatherBusMap.getLatLngBounds());

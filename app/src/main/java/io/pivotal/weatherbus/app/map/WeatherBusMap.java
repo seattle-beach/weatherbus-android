@@ -1,5 +1,6 @@
 package io.pivotal.weatherbus.app.map;
 
+import android.view.View;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.*;
@@ -43,7 +44,7 @@ public class WeatherBusMap {
         googleMap.clear();
     }
 
-    public Void setOnMarkerClickListener(final OnWeatherBusMarkerClick listener) {
+    public Void setOnMarkerClickListener(final OnMarkerClickListener listener) {
         googleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
@@ -53,7 +54,7 @@ public class WeatherBusMap {
         return null;
     }
 
-    public Void setOnInfoWindowClickListener(final OnWeatherBusInfoClickListener listener) {
+    public Void setOnInfoWindowClickListener(final OnInfoWindowClickListener listener) {
         googleMap.setOnInfoWindowClickListener(new GoogleMap.OnInfoWindowClickListener() {
             @Override
             public void onInfoWindowClick(Marker marker) {
@@ -63,7 +64,7 @@ public class WeatherBusMap {
         return null;
     }
 
-    public Void setOnCameraChangeListener(final OnWeatherBusCameraChangeListener listener) {
+    public Void setOnCameraChangeListener(final OnCameraChangeListener listener) {
         googleMap.setOnCameraChangeListener(new GoogleMap.OnCameraChangeListener() {
             @Override
             public void onCameraChange(CameraPosition cameraPosition) {
@@ -73,19 +74,39 @@ public class WeatherBusMap {
         return null;
     }
 
+    public void setInfoWindowAdapter(final InfoWindowAdapter adapter) {
+        googleMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+            @Override
+            public View getInfoWindow(Marker marker) {
+                return adapter.getInfoWindow(weatherBusMarkers.get(marker.getId()));
+            }
+
+            @Override
+            public View getInfoContents(Marker marker) {
+                return adapter.getInfoContents(weatherBusMarkers.get(marker.getId()));
+            }
+        });
+    }
+
     public interface OnWeatherBusMapReadyCallback {
         void onMapReady(WeatherBusMap map);
     }
 
-    public interface OnWeatherBusInfoClickListener {
+    public interface OnInfoWindowClickListener {
         void onInfoWindowClick(WeatherBusMarker marker);
     }
 
-    public interface OnWeatherBusMarkerClick {
+    public interface OnMarkerClickListener {
         boolean onMarkerClick(WeatherBusMarker marker);
     }
 
-    public interface OnWeatherBusCameraChangeListener {
+    public interface OnCameraChangeListener {
         void onCameraChange(CameraPosition position);
+    }
+
+    public interface InfoWindowAdapter {
+        View getInfoWindow(WeatherBusMarker marker);
+
+        View getInfoContents(WeatherBusMarker marker);
     }
 }
