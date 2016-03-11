@@ -173,12 +173,16 @@ public class MapStopsFragment extends Fragment {
                     marker = selectedMarker;
                 } else {
                     busStop = new BusStop(stopResponse);
+                    String title = busStop.getName();
+                    if (!busStop.getDirection().isEmpty()) {
+                        title += " (" + busStop.getDirection() + ")";
+                    }
                     boolean isFavorite = favoriteStops.contains(stopResponse.getId());
                     busStop.setFavorite(isFavorite);
                     LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
                     marker = weatherBusMap.addMarker(new MarkerOptions()
                             .position(stopPosition)
-                            .title(busStop.getName()));
+                            .title(title));
                     marker.setFavorite(isFavorite);
                 }
                 busStopMarkers.put(busStop,marker);

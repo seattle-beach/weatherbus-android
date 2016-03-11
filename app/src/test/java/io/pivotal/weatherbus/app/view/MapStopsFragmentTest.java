@@ -80,8 +80,8 @@ public class MapStopsFragmentTest {
         newStopEmitter = PublishSubject.create();
 
         when(weatherBusMap.getLatLngBounds()).thenReturn(new LatLngBounds(new LatLng(25,30), new LatLng(27,32)));
-        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 0")))).thenReturn(markerZero);
-        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(markerOne);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 0 (S)")))).thenReturn(markerZero);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 1 (NW)")))).thenReturn(markerOne);
         when(weatherBusMap.moveCamera(any(LatLng.class))).thenAnswer(new Answer<Void>() {
             @Override
             public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
@@ -221,14 +221,14 @@ public class MapStopsFragmentTest {
         reset(service);
         reset(weatherBusMap);
         when(service.getStopsForLocation(15, 15, 10, 10)).thenReturn(newStopEmitter);
-        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 1")))).thenReturn(markerOne);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 1 (NW)")))).thenReturn(markerOne);
         when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 2")))).thenReturn(markerTwo);
-        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 3")))).thenReturn(markerThree);
+        when(weatherBusMap.addMarker(argThat(new MatchesTitle("STOP 3 (W)")))).thenReturn(markerThree);
         cameraChange.onNext(new LatLngBounds(new LatLng(10, 10), new LatLng(20, 20)));
         StopForLocationResponse response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
                 add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4, 4.5));
-                add(new BusStopResponse("2_2234", "STOP 2", "SE", 2.2, 2.3));
+                add(new BusStopResponse("2_2234", "STOP 2", "", 2.2, 2.3));
                 add(new BusStopResponse("3_2234", "STOP 3", "W", 3.2, 3.3));
             }});
         }};
