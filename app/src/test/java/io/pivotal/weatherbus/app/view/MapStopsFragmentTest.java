@@ -86,8 +86,8 @@ public class MapStopsFragmentTest {
             @Override
             public Void answer(InvocationOnMock invocationOnMock) throws Throwable {
                 LatLng newCenter = (LatLng) invocationOnMock.getArguments()[0];
-                LatLngBounds newBounds = new LatLngBounds(new LatLng(newCenter.latitude - 1, newCenter.longitude - 1),
-                        new LatLng(newCenter.latitude + 1, newCenter.longitude + 1));
+                LatLngBounds newBounds = new LatLngBounds(new LatLng(newCenter.latitude - 5, newCenter.longitude - 5),
+                        new LatLng(newCenter.latitude + 5, newCenter.longitude + 5));
                 when(weatherBusMap.getLatLngBounds()).thenReturn(newBounds);
                 return null;
             }
@@ -100,16 +100,16 @@ public class MapStopsFragmentTest {
         when(weatherBusMapRepository.getOnMapReadyObservable(any(MapFragmentAdapter.class))).thenReturn(mapEmitter);
         when(weatherBusMapRepository.getOnMarkerClickObservable(any(MapFragmentAdapter.class))).thenReturn(markerClick);
         when(weatherBusMapRepository.getOnInfoWindowClickObservable(any(MapFragmentAdapter.class))).thenReturn(infoWindowClick);
-        when(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 2.0, 2.0)).thenReturn(stopEmitter);
+        when(service.getStopsForLocation(location.getLatitude(), location.getLongitude(), 10.0, 10.0)).thenReturn(stopEmitter);
         when(weatherBusMapRepository.getOnCameraChangeObservable(any(MapFragmentAdapter.class))).thenReturn(cameraChange);
 
         response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse("1_1234", "STOP 0", "S", 4.2 , 4.3, new ArrayList<String>() {{
+                add(new BusStopResponse("1_1234", "STOP 0", "S", 9 , 10, new ArrayList<String>() {{
                     add("route_0");
                     add("route_1");
                 }}));
-                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4 , 4.5, new ArrayList<String>() {{
+                add(new BusStopResponse("1_2234", "STOP 1", "NW", 11 , 11, new ArrayList<String>() {{
                     add("route_1");
                     add("route_2");
                 }}));
@@ -121,6 +121,8 @@ public class MapStopsFragmentTest {
                 add(new BusStopReference.RouteReference("route_2", "", ""));
             }}));
         }};
+        when(markerZero.getPosition()).thenReturn(new LatLng(9,10));
+        when(markerOne.getPosition()).thenReturn(new LatLng(11, 11));
         subject = new MapStopsFragment();
         FragmentTestUtil.startFragment(subject, MockActivity.class);
     }
@@ -140,7 +142,7 @@ public class MapStopsFragmentTest {
         locationEmitter.onCompleted();
 
         verify(weatherBusMap).moveCamera(new LatLng(location.getLatitude(),location.getLatitude()));
-        verify(service).getStopsForLocation(location.getLatitude(), location.getLatitude(), 2.0, 2.0);
+        verify(service).getStopsForLocation(location.getLatitude(), location.getLatitude(), 10.0, 10.0);
     }
 
     @Test
@@ -201,19 +203,32 @@ public class MapStopsFragmentTest {
     public void onCameraChange_shouldReloadStops() {
         fulfillRequests();
         moveMap();
-
         verify(service).getStopsForLocation(15, 15, 10, 10);
-        verify(weatherBusMap, times(3)).addMarker(any(MarkerOptions.class));
+
     }
 
     @Test
-    public void onCameraChange_shouldClearAllMarkersButSelected() {
+    public void onCameraChange_shouldOnlyRemoveNonVisibleMarkers() {
         fulfillRequests();
-        markerClick.onNext(markerOne);
+        moveMap();
+        verify(markerZero).remove();
+        verify(markerOne, never()).remove();
+    }
+
+    @Test
+    public void onCameraChange_shouldNotRemoveSelectedMarker() {
+        fulfillRequests();
+        markerClick.onNext(markerZero);
         moveMap();
 
-        verify(markerZero).remove();
-        verify(markerOne,never()).remove();
+        verify(markerZero, never()).remove();
+        //verify(weatherBusMap, times(2)).addMarker(any(MarkerOptions.class));
+    }
+
+    @Test
+    public void onCameraChange_shouldOnlyAddMarkersForNewStops() {
+        fulfillRequests();
+        moveMap();
         verify(weatherBusMap, times(2)).addMarker(any(MarkerOptions.class));
     }
 
@@ -248,9 +263,9 @@ public class MapStopsFragmentTest {
         cameraChange.onNext(new LatLngBounds(new LatLng(10, 10), new LatLng(20, 20)));
         StopForLocationResponse response = new StopForLocationResponse() {{
             setStops(new ArrayList<BusStopResponse>() {{
-                add(new BusStopResponse("1_2234", "STOP 1", "NW", 4.4, 4.5, new ArrayList<String>()));
-                add(new BusStopResponse("2_2234", "STOP 2", "", 2.2, 2.3, new ArrayList<String>()));
-                add(new BusStopResponse("3_2234", "STOP 3", "W", 3.2, 3.3, new ArrayList<String>()));
+                add(new BusStopResponse("1_2234", "STOP 1", "NW", 11, 11, new ArrayList<String>()));
+                add(new BusStopResponse("2_2234", "STOP 2", "", 18, 17, new ArrayList<String>()));
+                add(new BusStopResponse("3_2234", "STOP 3", "W", 19, 16, new ArrayList<String>()));
             }});
             setIncluded(new BusStopReference(new ArrayList<BusStopReference.RouteReference>()));
         }};

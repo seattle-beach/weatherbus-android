@@ -35,4 +35,19 @@ public class BusStop {
         this.longitude = longitude;
         this.routeIds = routeIds;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o.getClass().equals(BusStop.class)) {
+            BusStop other = (BusStop) o;
+            return other.getId().equals(this.id);
+        } else {
+            return super.equals(o);
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
 }

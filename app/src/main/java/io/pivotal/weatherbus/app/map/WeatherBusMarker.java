@@ -1,6 +1,7 @@
 package io.pivotal.weatherbus.app.map;
 
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
 public class WeatherBusMarker {
@@ -37,6 +38,10 @@ public class WeatherBusMarker {
 
     public void setTitle(String title) {
         marker.setTitle(title);
+    }
+
+    public LatLng getPosition() {
+        return marker.getPosition();
     }
 
     public void setSnippet(String snippet) {

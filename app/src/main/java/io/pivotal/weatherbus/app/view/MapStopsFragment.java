@@ -109,12 +109,11 @@ public class MapStopsFragment extends Fragment {
 
         subscriptions = new CompositeSubscription();
 
-        subscriptions.add(weatherBusMapRepository.getOnMarkerClickObservable(mapFragmentAdapter)
-                .subscribeOn(Schedulers.newThread())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new OnNextMarkerClick()));
+        Observable<WeatherBusMap> onMapReady = weatherBusMapRepository.getOnMapReadyObservable(mapFragmentAdapter);
+        Observable<LatLngBounds> onCameraChange = weatherBusMapRepository.getOnCameraChangeObservable(mapFragmentAdapter);
+        Observable<WeatherBusMarker> onMarkerClick = weatherBusMapRepository.getOnMarkerClickObservable(mapFragmentAdapter);
 
-        subscriptions.add(weatherBusMapRepository.getOnMapReadyObservable(mapFragmentAdapter)
+        subscriptions.add(onMapReady
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(new Action1<WeatherBusMap>() {
@@ -125,7 +124,13 @@ public class MapStopsFragment extends Fragment {
                     }
                 }));
 
-        subscriptions.add(weatherBusMapRepository.getOnMapReadyObservable(mapFragmentAdapter)
+        subscriptions.add(onMarkerClick
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new OnNextMarkerClick()));
+
+
+        subscriptions.add(onMapReady
                 .doOnNext(new Action1<WeatherBusMap>() {
                     @Override
                     public void call(WeatherBusMap weatherBusMap) {
@@ -138,7 +143,7 @@ public class MapStopsFragment extends Fragment {
                         weatherBusMap.moveCamera(latLng);
                         return weatherBusMap.getLatLngBounds();
                     }
-                }).mergeWith(weatherBusMapRepository.getOnCameraChangeObservable(mapFragmentAdapter))
+                }).mergeWith(onCameraChange)
                 .flatMap(new StopsFromLatLngBoundsFunction())
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -181,21 +186,10 @@ public class MapStopsFragment extends Fragment {
                 routeNames.put(route.getId(), name);
             }
 
-
-            WeatherBusMarker selectedMarker = busStopMarkers.get(selectedStop);
-            for (WeatherBusMarker marker : busStopMarkers.values()) {
-                if (marker != selectedMarker) {
-                    marker.remove();
-                }
-            }
-            busStopMarkers.clear();
-            if (selectedMarker != null) {
-                busStopMarkers.put(selectedStop, selectedMarker);
-            }
             List<String> favoriteStops = MapStopsFragment.this.favoriteStops.getSavedStops();
             for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
-                if ((selectedStop == null || !selectedStop.getId().equals(stopResponse.getId()))) {
-                    BusStop busStop = new BusStop(stopResponse);
+                BusStop busStop = new BusStop(stopResponse);
+                if (!busStopMarkers.containsKey(busStop)) {
                     String title = createLabelTitle(busStop);
                     String snippet = createLabelSnippet(busStop, routeNames);
                     boolean isFavorite = favoriteStops.contains(stopResponse.getId());
@@ -236,6 +230,17 @@ public class MapStopsFragment extends Fragment {
     private class StopsFromLatLngBoundsFunction implements Func1<LatLngBounds, Observable<StopForLocationResponse>> {
         @Override
         public Observable<StopForLocationResponse> call(LatLngBounds bounds) {
+            List<WeatherBusMarker> removedMarkers = new ArrayList<>();
+            WeatherBusMarker selectedMarker = busStopMarkers.get(selectedStop);
+            for (WeatherBusMarker marker : busStopMarkers.values()) {
+                if (!bounds.contains(marker.getPosition()) && marker != selectedMarker) {
+                    marker.remove();
+                    removedMarkers.add(marker);
+                }
+            }
+            for (WeatherBusMarker marker : removedMarkers) {
+                busStopMarkers.values().remove(marker);
+            }
             LatLng center = bounds.getCenter();
             double latitudeSpan = bounds.northeast.latitude - bounds.southwest.latitude;
             double longitudeSpan = bounds.northeast.longitude - bounds.southwest.longitude;
