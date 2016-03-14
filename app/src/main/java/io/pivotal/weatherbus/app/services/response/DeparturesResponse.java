@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app.services;
+package io.pivotal.weatherbus.app.services.response;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Data;
@@ -6,10 +6,10 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class StopResponse {
+public class DeparturesResponse {
     private StopData data;
 
-    public StopResponse(StopData data) {
+    public DeparturesResponse(StopData data) {
         this.data = data;
     }
 

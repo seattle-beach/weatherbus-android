@@ -8,8 +8,8 @@ import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
 import io.pivotal.weatherbus.app.model.BusRoute;
-import io.pivotal.weatherbus.app.services.StopResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
+import io.pivotal.weatherbus.app.services.response.DeparturesResponse;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.joda.time.DateTimeZone;
 import org.junit.Before;
@@ -34,7 +34,7 @@ public class BusRoutesFragmentTest {
     @Inject WeatherBusService service;
 
     BusRoutesFragment subject;
-    PublishSubject<StopResponse> stopResponseEmitter;
+    PublishSubject<DeparturesResponse> stopResponseEmitter;
     ListView busList;
 
     @Before
@@ -58,15 +58,15 @@ public class BusRoutesFragmentTest {
     @Test
     public void onNextBusInfo_shouldFillListView() {
         final int millisInMinute = 60 * 1000;
-        stopResponseEmitter.onNext(new StopResponse(
-                new StopResponse.StopData(
-                        new ArrayList<StopResponse.StopData.Departure>() {{
-                            add(new StopResponse.StopData.Departure("0", "BUS 0", 5 * millisInMinute, 6 * millisInMinute, 76));
-                            add(new StopResponse.StopData.Departure("1", "BUS 1", 0, 7 * millisInMinute, 78.1));
-                            add(new StopResponse.StopData.Departure("2", "BUS 2", 4 * millisInMinute, 17 * millisInMinute, 78.1));
-                            add(new StopResponse.StopData.Departure("3", "BUS 3", 8 * millisInMinute, 7 * millisInMinute, 78.1));
-                            add(new StopResponse.StopData.Departure("4", "BUS 4", 19 * millisInMinute, 7 * millisInMinute, 78.1));
-                            add(new StopResponse.StopData.Departure("5", "BUS 5", 7 * millisInMinute, 7 * millisInMinute, 78.1));
+        stopResponseEmitter.onNext(new DeparturesResponse(
+                new DeparturesResponse.StopData(
+                        new ArrayList<DeparturesResponse.StopData.Departure>() {{
+                            add(new DeparturesResponse.StopData.Departure("0", "BUS 0", 5 * millisInMinute, 6 * millisInMinute, 76));
+                            add(new DeparturesResponse.StopData.Departure("1", "BUS 1", 0, 7 * millisInMinute, 78.1));
+                            add(new DeparturesResponse.StopData.Departure("2", "BUS 2", 4 * millisInMinute, 17 * millisInMinute, 78.1));
+                            add(new DeparturesResponse.StopData.Departure("3", "BUS 3", 8 * millisInMinute, 7 * millisInMinute, 78.1));
+                            add(new DeparturesResponse.StopData.Departure("4", "BUS 4", 19 * millisInMinute, 7 * millisInMinute, 78.1));
+                            add(new DeparturesResponse.StopData.Departure("5", "BUS 5", 7 * millisInMinute, 7 * millisInMinute, 78.1));
                         }}
                 )));
         shadowOf(busList).populateItems();
@@ -84,10 +84,10 @@ public class BusRoutesFragmentTest {
     public void onNextBusInfo_shouldFillListViewWithLocalTimes() {
         DateTimeZone.setDefault(DateTimeZone.forOffsetHours(-8));
 
-        stopResponseEmitter.onNext(new StopResponse(
-                new StopResponse.StopData(
-                        new ArrayList<StopResponse.StopData.Departure>() {{
-                            add(new StopResponse.StopData.Departure("0", "BUS 0", 5 * 60 * 1000, 6 * 60 * 1000, 76));
+        stopResponseEmitter.onNext(new DeparturesResponse(
+                new DeparturesResponse.StopData(
+                        new ArrayList<DeparturesResponse.StopData.Departure>() {{
+                            add(new DeparturesResponse.StopData.Departure("0", "BUS 0", 5 * 60 * 1000, 6 * 60 * 1000, 76));
                         }}
                 )));
         BusRoute expected = new BusRoute("0", "BUS 0", 5 * 60 * 1000, 6 * 60 * 1000, 76);
@@ -102,8 +102,8 @@ public class BusRoutesFragmentTest {
 
     @Test
     public void onNoBusRoutes_shouldToastAnAlert() {
-        stopResponseEmitter.onNext(new StopResponse(
-                new StopResponse.StopData(new ArrayList<StopResponse.StopData.Departure>())));
+        stopResponseEmitter.onNext(new DeparturesResponse(
+                new DeparturesResponse.StopData(new ArrayList<DeparturesResponse.StopData.Departure>())));
         TextView message = ButterKnife.findById(subject.getView(), R.id.emptyRouteMessage);
         assertThat(message.getVisibility()).isEqualTo(View.VISIBLE);
     }

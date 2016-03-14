@@ -1,6 +1,6 @@
 package io.pivotal.weatherbus.app.model;
 
-import io.pivotal.weatherbus.app.services.StopForLocationResponse;
+import io.pivotal.weatherbus.app.services.response.StopResponse;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,7 +18,7 @@ public class BusStop {
 
     private boolean favorite;
 
-    public BusStop(StopForLocationResponse.BusStopResponse response) {
+    public BusStop(StopResponse response) {
         this.id = response.getId();
         this.name = response.getName();
         this.latitude = response.getLatitude();

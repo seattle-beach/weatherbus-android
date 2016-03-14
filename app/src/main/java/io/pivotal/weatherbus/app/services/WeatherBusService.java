@@ -1,5 +1,7 @@
 package io.pivotal.weatherbus.app.services;
 
+import io.pivotal.weatherbus.app.services.response.DeparturesResponse;
+import io.pivotal.weatherbus.app.services.response.MultipleStopResponse;
 import rx.Observable;
 
 public class WeatherBusService {
@@ -9,14 +11,14 @@ public class WeatherBusService {
         this.weatherBusService = weatherBusService;
     }
 
-    public Observable<StopForLocationResponse> getStopsForLocation(double latitude,
-                                                                         double longitude,
-                                                                         double latitudeSpan,
-                                                                         double longitudeSpan) {
+    public Observable<MultipleStopResponse> getStopsForLocation(double latitude,
+                                                                double longitude,
+                                                                double latitudeSpan,
+                                                                double longitudeSpan) {
         return weatherBusService.getStopsForLocation(latitude, longitude, latitudeSpan, longitudeSpan);
     }
 
-    public Observable<StopResponse> getStopInformation(String stopId) {
+    public Observable<DeparturesResponse> getStopInformation(String stopId) {
         return weatherBusService.getDepartures(stopId);
     }
 }

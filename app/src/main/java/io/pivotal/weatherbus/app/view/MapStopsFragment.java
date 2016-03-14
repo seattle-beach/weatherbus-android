@@ -10,22 +10,24 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 import com.google.android.gms.maps.GoogleMapOptions;
 import com.google.android.gms.maps.MapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.*;
 import com.google.common.base.Joiner;
 import io.pivotal.weatherbus.app.R;
-import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
+import io.pivotal.weatherbus.app.adapter.InfoContentsAdapter;
 import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
+import io.pivotal.weatherbus.app.model.IconOptions;
+import io.pivotal.weatherbus.app.repositories.FavoriteStopsRepository;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
+import io.pivotal.weatherbus.app.repositories.MarkerIconRepository;
 import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
-import io.pivotal.weatherbus.app.services.StopForLocationResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
+import io.pivotal.weatherbus.app.services.response.MultipleStopResponse;
+import io.pivotal.weatherbus.app.services.response.RouteReference;
+import io.pivotal.weatherbus.app.services.response.StopResponse;
 import rx.Observable;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
@@ -44,9 +46,12 @@ import java.util.Map;
 public class MapStopsFragment extends Fragment {
     @Inject WeatherBusMapRepository weatherBusMapRepository;
     @Inject LocationRepository locationRepository;
-    @Inject SavedStops favoriteStops;
+    @Inject
+    FavoriteStopsRepository favoriteStops;
+    @Inject MarkerIconRepository markerIconRepository;
     @Inject WeatherBusService service;
-    @Inject InfoContentsAdapter infoContentsAdapter;
+    @Inject
+    InfoContentsAdapter infoContentsAdapter;
 
     private MapFragmentAdapter mapFragmentAdapter;
     private MapFragment mapFragment;
@@ -160,7 +165,7 @@ public class MapStopsFragment extends Fragment {
         }
     }
 
-    private class StopForLocationResponsesSubscriber extends Subscriber<StopForLocationResponse> {
+    private class StopForLocationResponsesSubscriber extends Subscriber<MultipleStopResponse> {
         @Override
         public void onCompleted() {
 
@@ -172,9 +177,9 @@ public class MapStopsFragment extends Fragment {
         }
 
         @Override
-        public void onNext(StopForLocationResponse stopForLocationResponse) {
+        public void onNext(MultipleStopResponse multipleStopResponse) {
             Map<String, String> routeNames = new HashMap<>();
-            for(StopForLocationResponse.BusStopReference.RouteReference route : stopForLocationResponse.getIncluded().getRoutes()) {
+            for(RouteReference route : multipleStopResponse.getIncluded().getRoutes()) {
                 String name;
                 if (!route.getShortName().isEmpty()) {
                     name = route.getShortName();
@@ -187,19 +192,20 @@ public class MapStopsFragment extends Fragment {
             }
 
             List<String> favoriteStops = MapStopsFragment.this.favoriteStops.getSavedStops();
-            for (StopForLocationResponse.BusStopResponse stopResponse : stopForLocationResponse.getStops()) {
+            for (StopResponse stopResponse : multipleStopResponse.getStops()) {
                 BusStop busStop = new BusStop(stopResponse);
                 if (!busStopMarkers.containsKey(busStop)) {
                     String title = createLabelTitle(busStop);
                     String snippet = createLabelSnippet(busStop, routeNames);
                     boolean isFavorite = favoriteStops.contains(stopResponse.getId());
                     busStop.setFavorite(isFavorite);
-                    LatLng stopPosition = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
+                    LatLng position = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
+                    BitmapDescriptor icon = markerIconRepository.get(new IconOptions(busStop.getDirection(), busStop.isFavorite()));
                     WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
-                            .position(stopPosition)
+                            .position(position)
+                            .snippet(snippet)
+                            .icon(icon)
                             .title(title));
-                    marker.setSnippet(snippet);
-                    marker.setFavorite(isFavorite);
                     busStopMarkers.put(busStop,marker);
                 }
             }
@@ -224,12 +230,13 @@ public class MapStopsFragment extends Fragment {
     }
 
     public void setSelectedFavorite(boolean isFavorite) {
-        busStopMarkers.get(selectedStop).setFavorite(isFavorite);
+        BitmapDescriptor icon = markerIconRepository.get(new IconOptions(selectedStop.getDirection(), isFavorite));
+        busStopMarkers.get(selectedStop).setIcon(icon);
     }
 
-    private class StopsFromLatLngBoundsFunction implements Func1<LatLngBounds, Observable<StopForLocationResponse>> {
+    private class StopsFromLatLngBoundsFunction implements Func1<LatLngBounds, Observable<MultipleStopResponse>> {
         @Override
-        public Observable<StopForLocationResponse> call(LatLngBounds bounds) {
+        public Observable<MultipleStopResponse> call(LatLngBounds bounds) {
             List<WeatherBusMarker> removedMarkers = new ArrayList<>();
             WeatherBusMarker selectedMarker = busStopMarkers.get(selectedStop);
             for (WeatherBusMarker marker : busStopMarkers.values()) {

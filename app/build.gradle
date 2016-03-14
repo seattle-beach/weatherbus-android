@@ -78,4 +78,6 @@ dependencies {
     testCompile 'org.assertj:assertj-core:1.7.0'
     testCompile 'org.robolectric:robolectric:3.1-SNAPSHOT'
     testCompile 'net.javacrumbs.json-unit:json-unit:1.8.0'
+    testCompile 'org.robolectric:shadows-maps:3.1-SNAPSHOT'
+    testCompile "org.robolectric:shadows-play-services:3.1-SNAPSHOT"
 }

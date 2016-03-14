@@ -4,12 +4,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import dagger.Module;
 import dagger.Provides;
-import io.pivotal.weatherbus.app.repositories.LocationRepository;
-import io.pivotal.weatherbus.app.repositories.WeatherBusMapRepository;
+import io.pivotal.weatherbus.app.adapter.InfoContentsAdapter;
+import io.pivotal.weatherbus.app.repositories.*;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import io.pivotal.weatherbus.app.view.BusRoutesFragment;
-import io.pivotal.weatherbus.app.view.InfoContentsAdapter;
 import io.pivotal.weatherbus.app.view.MapStopsFragment;
 import io.pivotal.weatherbus.app.view.WeatherBusActivity;
 import retrofit.RestAdapter;
@@ -20,7 +19,8 @@ import javax.inject.Singleton;
 @Module(injects = {
         WeatherBusActivity.class,
         MapStopsFragment.class,
-        BusRoutesFragment.class
+        BusRoutesFragment.class,
+        MarkerIconRepository.class
 })
 
 public class ApplicationModule {
@@ -70,12 +70,24 @@ public class ApplicationModule {
 
     @Provides
     @Singleton
-    SavedStops getSavedStops(SharedPreferences settings) {
-        return new SavedStops(settings);
+    FavoriteStopsRepository getSavedStops(SharedPreferences settings) {
+        return new FavoriteStopsRepository(settings);
     }
 
     @Provides
     InfoContentsAdapter getInfoContentsAdapter() {
         return new InfoContentsAdapter();
+    }
+
+    @Provides
+    @Singleton
+    MarkerIconRepository getMarkerIconRepository() {
+        return new MarkerIconRepository();
+    }
+
+    @Provides
+    @Singleton
+    MarkerIconFactory getMarkerIconFactory() {
+        return new MarkerIconFactory(context);
     }
 }

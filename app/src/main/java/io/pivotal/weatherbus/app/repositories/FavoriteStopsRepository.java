@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app;
+package io.pivotal.weatherbus.app.repositories;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
@@ -6,10 +6,10 @@ import android.content.SharedPreferences.Editor;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SavedStops {
+public class FavoriteStopsRepository {
     SharedPreferences settings;
 
-    public SavedStops(SharedPreferences settings) {
+    public FavoriteStopsRepository(SharedPreferences settings) {
         this.settings = settings;
     }
 

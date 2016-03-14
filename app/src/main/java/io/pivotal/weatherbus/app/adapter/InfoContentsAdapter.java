@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app.view;
+package io.pivotal.weatherbus.app.adapter;
 
 import android.content.Context;
 import android.view.View;

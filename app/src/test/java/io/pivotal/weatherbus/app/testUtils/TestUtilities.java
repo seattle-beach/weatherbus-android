@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app;
+package io.pivotal.weatherbus.app.testUtils;
 
 import org.mockito.ArgumentMatcher;
 import retrofit.client.Request;

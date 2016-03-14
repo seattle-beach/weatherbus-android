@@ -10,9 +10,9 @@ import android.widget.TextView;
 import butterknife.ButterKnife;
 import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.R;
-import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
 import io.pivotal.weatherbus.app.model.BusStop;
+import io.pivotal.weatherbus.app.repositories.FavoriteStopsRepository;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +33,8 @@ import static org.mockito.Mockito.*;
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
 public class WeatherBusActivityTest {
-    @Inject SavedStops favoriteStops;
+    @Inject
+    FavoriteStopsRepository favoriteStops;
     @Mock MapStopsFragment mapStopsFragment;
     @Mock BusRoutesFragment busRoutesFragment;
 

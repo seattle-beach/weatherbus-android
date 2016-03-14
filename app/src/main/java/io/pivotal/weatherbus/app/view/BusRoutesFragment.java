@@ -13,10 +13,10 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import io.pivotal.weatherbus.app.R;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
+import io.pivotal.weatherbus.app.adapter.BusRouteAdapter;
 import io.pivotal.weatherbus.app.model.BusRoute;
-import io.pivotal.weatherbus.app.model.BusRouteAdapter;
-import io.pivotal.weatherbus.app.services.StopResponse;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
+import io.pivotal.weatherbus.app.services.response.DeparturesResponse;
 import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
@@ -77,7 +77,7 @@ public class BusRoutesFragment extends Fragment {
         service.getStopInformation(stopId)
                 .subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Subscriber<StopResponse>() {
+                .subscribe(new Subscriber<DeparturesResponse>() {
                     @Override
                     public void onCompleted() {
 
@@ -89,12 +89,12 @@ public class BusRoutesFragment extends Fragment {
                     }
 
                     @Override
-                    public void onNext(StopResponse stopResponse) {
-                        List<StopResponse.StopData.Departure> departures = stopResponse.getData().getDepartures();
+                    public void onNext(DeparturesResponse departuresResponse) {
+                        List<DeparturesResponse.StopData.Departure> departures = departuresResponse.getData().getDepartures();
                         if (departures.size() == 0) {
                             message.setVisibility(View.VISIBLE);
                         }
-                        for (StopResponse.StopData.Departure departure : departures) {
+                        for (DeparturesResponse.StopData.Departure departure : departures) {
                             BusRoute busRoute = new BusRoute(departure.getBusNumber(),
                                     departure.getBusName(),
                                     departure.getPredictedTime(),

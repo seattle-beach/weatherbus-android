@@ -12,9 +12,9 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.pivotal.weatherbus.app.R;
-import io.pivotal.weatherbus.app.SavedStops;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
 import io.pivotal.weatherbus.app.model.BusStop;
+import io.pivotal.weatherbus.app.repositories.FavoriteStopsRepository;
 
 import javax.inject.Inject;
 
@@ -24,7 +24,8 @@ public class WeatherBusActivity extends Activity implements FragmentListener {
     @Bind(R.id.bus_info) View toolbarInfo;
     @Bind(R.id.toolbar_favorite_button) ImageButton favoriteButton;
 
-    @Inject SavedStops favoriteStops;
+    @Inject
+    FavoriteStopsRepository favoriteStops;
 
     private MapStopsFragment mapStopsFragment = new MapStopsFragment();
     private BusRoutesFragment busRoutesFragment= new BusRoutesFragment();

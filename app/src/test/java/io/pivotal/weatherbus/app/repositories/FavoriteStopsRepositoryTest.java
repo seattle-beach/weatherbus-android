@@ -1,7 +1,8 @@
-package io.pivotal.weatherbus.app;
+package io.pivotal.weatherbus.app.repositories;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,17 +17,17 @@ import static org.mockito.Mockito.*;
 
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
-public class SavedStopsTest {
+public class FavoriteStopsRepositoryTest {
     @Mock
     SharedPreferences settings;
     @Mock
     Editor editor;
 
-    SavedStops subject;
+    FavoriteStopsRepository subject;
 
     @Before
     public void setUp() {
-        subject = new SavedStops(settings);
+        subject = new FavoriteStopsRepository(settings);
         when(settings.edit()).thenReturn(editor);
     }
 

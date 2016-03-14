@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app.model;
+package io.pivotal.weatherbus.app.adapter;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -9,6 +9,7 @@ import android.widget.TextView;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import io.pivotal.weatherbus.app.R;
+import io.pivotal.weatherbus.app.model.BusRoute;
 import org.joda.time.LocalTime;
 
 public class BusRouteAdapter extends ArrayAdapter<BusRoute> {

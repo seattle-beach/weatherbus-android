@@ -7,6 +7,7 @@ import android.widget.TextView;
 import butterknife.ButterKnife;
 import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.R;
+import io.pivotal.weatherbus.app.adapter.InfoContentsAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;

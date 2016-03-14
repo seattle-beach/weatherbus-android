@@ -1,4 +1,4 @@
-package io.pivotal.weatherbus.app.model;
+package io.pivotal.weatherbus.app.adapter;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+import io.pivotal.weatherbus.app.model.BusStop;
 
 import java.util.Locale;
 

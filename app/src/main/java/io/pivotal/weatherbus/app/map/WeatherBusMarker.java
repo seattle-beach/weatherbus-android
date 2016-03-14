@@ -1,6 +1,6 @@
 package io.pivotal.weatherbus.app.map;
 
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 
@@ -13,15 +13,6 @@ public class WeatherBusMarker {
 
     public void remove() {
         marker.remove();
-    }
-
-    public void setFavorite(boolean isFavorite) {
-        if (isFavorite) {
-            marker.setIcon(BitmapDescriptorFactory.defaultMarker());
-        }
-        else {
-            marker.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE));
-        }
     }
 
     public String getId() {
@@ -46,5 +37,9 @@ public class WeatherBusMarker {
 
     public void setSnippet(String snippet) {
         marker.setSnippet(snippet);
+    }
+
+    public void setIcon(BitmapDescriptor icon) {
+        marker.setIcon(icon);
     }
 }
