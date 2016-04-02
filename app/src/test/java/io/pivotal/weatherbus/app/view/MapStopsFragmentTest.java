@@ -15,7 +15,7 @@ import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
-import io.pivotal.weatherbus.app.model.IconOptions;
+import io.pivotal.weatherbus.app.model.MarkerImageOptions;
 import io.pivotal.weatherbus.app.repositories.FavoriteStopsRepository;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.MarkerIconRepository;
@@ -202,9 +202,9 @@ public class MapStopsFragmentTest {
         }});
         BitmapDescriptor descriptorZero = new BitmapDescriptor(mock(zzd.class));
         BitmapDescriptor descriptorOne = new BitmapDescriptor(mock(zzd.class));
-        when(markerIconRepository.get(new IconOptions(stopZero.getDirection(), true))).
+        when(markerIconRepository.get(new MarkerImageOptions(stopZero.getDirection(), true))).
                 thenReturn(descriptorZero);
-        when(markerIconRepository.get(new IconOptions(stopOne.getDirection(), false))).
+        when(markerIconRepository.get(new MarkerImageOptions(stopOne.getDirection(), false))).
                 thenReturn(descriptorOne);
 
         fulfillRequests();
@@ -231,9 +231,9 @@ public class MapStopsFragmentTest {
 
         BitmapDescriptor favoriteIcon = new BitmapDescriptor(mock(zzd.class));
         BitmapDescriptor regularIcon = new BitmapDescriptor(mock(zzd.class));
-        when(markerIconRepository.get(new IconOptions(stopZero.getDirection(), true))).
+        when(markerIconRepository.get(new MarkerImageOptions(stopZero.getDirection(), true))).
                 thenReturn(favoriteIcon);
-        when(markerIconRepository.get(new IconOptions(stopZero.getDirection(), false))).
+        when(markerIconRepository.get(new MarkerImageOptions(stopZero.getDirection(), false))).
                 thenReturn(regularIcon);
 
         markerClick.onNext(markerZero);

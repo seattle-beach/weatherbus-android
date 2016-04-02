@@ -3,6 +3,7 @@ package io.pivotal.weatherbus.app;
 import dagger.Module;
 import dagger.Provides;
 import io.pivotal.weatherbus.app.adapter.InfoContentsAdapter;
+import io.pivotal.weatherbus.app.map.MarkerImageFactory;
 import io.pivotal.weatherbus.app.repositories.*;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
 import io.pivotal.weatherbus.app.view.BusRoutesFragmentTest;
@@ -21,7 +22,7 @@ import static org.mockito.Mockito.mock;
                 MapStopsFragmentTest.class,
                 WeatherBusActivityTest.FakeWeatherBusActivity.class,
                 BusRoutesFragmentTest.class,
-                MarkerIconRepositoryTest.class
+                MarkerImageRepositoryTest.class
         }
 )
 public class TestApplicationModule {
@@ -57,8 +58,8 @@ public class TestApplicationModule {
 
     @Provides
     @Singleton
-    MarkerIconFactory getMarkerIconFactory() {
-        return mock(MarkerIconFactory.class);
+    MarkerImageFactory getMarkerIconFactory() {
+        return mock(MarkerImageFactory.class);
     }
 
     @Provides

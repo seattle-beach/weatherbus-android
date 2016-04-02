@@ -4,7 +4,8 @@ import com.google.android.gms.dynamic.zzd;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import io.pivotal.weatherbus.app.BuildConfig;
 import io.pivotal.weatherbus.app.WeatherBusApplication;
-import io.pivotal.weatherbus.app.model.IconOptions;
+import io.pivotal.weatherbus.app.map.MarkerImageFactory;
+import io.pivotal.weatherbus.app.model.MarkerImageOptions;
 import io.pivotal.weatherbus.app.testUtils.WeatherBusTestRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,44 +21,45 @@ import static org.mockito.Mockito.*;
 
 @RunWith(WeatherBusTestRunner.class)
 @Config(constants = BuildConfig.class)
-public class MarkerIconRepositoryTest {
+public class MarkerImageRepositoryTest {
     @Inject
-    MarkerIconFactory markerIconFactory;
+    MarkerImageFactory markerImageFactory;
 
-    @Mock MarkerIconFactory.MarkerIcon markerIcon;
+    @Mock
+    MarkerImageFactory.MarkerImage markerImage;
 
     MarkerIconRepository subject;
-    IconOptions options;
+    MarkerImageOptions options;
     BitmapDescriptor descriptorZero = new BitmapDescriptor(mock(zzd.class));
     BitmapDescriptor descriptorOne = new BitmapDescriptor(mock(zzd.class));
 
     @Before
     public void setUp() throws Exception {
         WeatherBusApplication.inject(this);
-        options = new IconOptions("S", true);
+        options = new MarkerImageOptions("S", true);
         subject = new MarkerIconRepository();
 
-        when(markerIconFactory.create(any(IconOptions.class))).thenReturn(markerIcon);
-        when(markerIcon.draw()).thenReturn(descriptorZero, descriptorOne);
+        when(markerImageFactory.create(any(MarkerImageOptions.class))).thenReturn(markerImage);
+        when(markerImage.draw()).thenReturn(descriptorZero, descriptorOne);
     }
 
     @Test
     public void getDescriptor_shouldReturnNewIconWhenEmpty() {
         assertThat(subject.get(options)).isNotNull();
-        verify(markerIconFactory, times(1)).create(any(IconOptions.class));
+        verify(markerImageFactory, times(1)).create(any(MarkerImageOptions.class));
     }
 
     @Test
     public void getDescriptor_whenCalledWithTheSameOptions_shouldNotCreateNewBitmap() {
         assertThat(subject.get(options)).isNotNull();
         assertThat(subject.get(options)).isNotNull();
-        verify(markerIconFactory, times(1)).create(any(IconOptions.class));
+        verify(markerImageFactory, times(1)).create(any(MarkerImageOptions.class));
     }
 
     @Test
     public void getDescriptor_whenCalledWithDifferentOptions_shouldCreateNewBitmap() {
         assertThat(subject.get(options)).isNotNull();
-        assertThat(subject.get(new IconOptions("W", false))).isNotNull();
-        verify(markerIconFactory, times(2)).create(any(IconOptions.class));
+        assertThat(subject.get(new MarkerImageOptions("W", false))).isNotNull();
+        verify(markerImageFactory, times(2)).create(any(MarkerImageOptions.class));
     }
 }

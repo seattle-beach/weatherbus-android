@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import dagger.Module;
 import dagger.Provides;
 import io.pivotal.weatherbus.app.adapter.InfoContentsAdapter;
+import io.pivotal.weatherbus.app.map.MarkerImageFactory;
 import io.pivotal.weatherbus.app.repositories.*;
 import io.pivotal.weatherbus.app.services.IRetrofitWeatherBusService;
 import io.pivotal.weatherbus.app.services.WeatherBusService;
@@ -87,7 +88,7 @@ public class ApplicationModule {
 
     @Provides
     @Singleton
-    MarkerIconFactory getMarkerIconFactory() {
-        return new MarkerIconFactory(context);
+    MarkerImageFactory getMarkerIconFactory() {
+        return new MarkerImageFactory(context);
     }
 }

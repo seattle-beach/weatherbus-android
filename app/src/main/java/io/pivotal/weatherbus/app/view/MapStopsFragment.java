@@ -19,7 +19,7 @@ import io.pivotal.weatherbus.app.map.MapFragmentAdapter;
 import io.pivotal.weatherbus.app.map.WeatherBusMap;
 import io.pivotal.weatherbus.app.map.WeatherBusMarker;
 import io.pivotal.weatherbus.app.model.BusStop;
-import io.pivotal.weatherbus.app.model.IconOptions;
+import io.pivotal.weatherbus.app.model.MarkerImageOptions;
 import io.pivotal.weatherbus.app.repositories.FavoriteStopsRepository;
 import io.pivotal.weatherbus.app.repositories.LocationRepository;
 import io.pivotal.weatherbus.app.repositories.MarkerIconRepository;
@@ -200,7 +200,7 @@ public class MapStopsFragment extends Fragment {
                     boolean isFavorite = favoriteStops.contains(stopResponse.getId());
                     busStop.setFavorite(isFavorite);
                     LatLng position = new LatLng(stopResponse.getLatitude(),stopResponse.getLongitude());
-                    BitmapDescriptor icon = markerIconRepository.get(new IconOptions(busStop.getDirection(), busStop.isFavorite()));
+                    BitmapDescriptor icon = markerIconRepository.get(new MarkerImageOptions(busStop.getDirection(), busStop.isFavorite()));
                     WeatherBusMarker marker = weatherBusMap.addMarker(new MarkerOptions()
                             .position(position)
                             .snippet(snippet)
@@ -230,7 +230,7 @@ public class MapStopsFragment extends Fragment {
     }
 
     public void setSelectedFavorite(boolean isFavorite) {
-        BitmapDescriptor icon = markerIconRepository.get(new IconOptions(selectedStop.getDirection(), isFavorite));
+        BitmapDescriptor icon = markerIconRepository.get(new MarkerImageOptions(selectedStop.getDirection(), isFavorite));
         busStopMarkers.get(selectedStop).setIcon(icon);
     }
 
